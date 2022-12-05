@@ -24,15 +24,15 @@ def process_moves(stacks: Dict[int, List[str]], moves: Tuple[int]):
 
 
 with open(fp, "r") as f:
-    lines = [l.strip("\n") for l in f.readlines()]
+    lines = f.read().split("\n")
 
-stacks = []
-while line:=lines.pop(0):
-    stacks.append(line)
+    stacks = []
+    while line:=lines.pop(0):
+        stacks.append(line)
 
-stacks = parse_stacks(stacks)
-moves = list(map(parse_move, lines))
-stack = process_moves(stacks, moves)
+    stacks = parse_stacks(stacks)
+    moves = list(map(parse_move, lines))
+    stack = process_moves(stacks, moves)
 
 answer = "".join([stacks[i][-1] for i in stacks])
 
