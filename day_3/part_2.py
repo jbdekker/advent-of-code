@@ -25,9 +25,7 @@ with open(fp, "r") as f:
     lines = [l.strip("\n") for l in f.readlines()]
 
 
-groups = [lines[i : i + 3] for i in range(0, len(lines), 3)]
-
-badges = find_common(groups)
+badges = find_common([lines[i : i + 3] for i in range(0, len(lines), 3)])
 priorities = map(priority, itertools.chain(*badges))
 
 print(sum(priorities))
