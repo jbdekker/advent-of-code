@@ -16,12 +16,8 @@ def to_section_pairs(lines: List[str]) -> List[Tuple[Tuple[int]]]:
     return list(map(parse_pair, [l.split(",") for l in lines]))
 
 
-def left_contains_right(a: List[int], b: List[int]) -> bool:
-    return a[0] <= b[0] and a[1] >= b[1]
-
-
 def one_contains_the_other(a: List[int], b: List[int]) -> bool:
-    return left_contains_right(a, b) or left_contains_right(b, a):
+    return a[0] <= b[0] and a[1] >= b[1] or b[0] <= a[0] and b[1] >= a[1]
 
 
 def has_overlap(a: List[int], b: List[int]) -> bool:
@@ -29,10 +25,14 @@ def has_overlap(a: List[int], b: List[int]) -> bool:
 
 
 with open(fp, "r") as f:
-    lines = [l.strip("\n") for l in f.readlines()]
+    pairslist = f.read().split("\n")
 
-n_fully_contained = sum([one_contains_the_other(*p) for p in to_section_pairs(lines)])
-n_has_overlap = sum([has_overlap(*p) for p in pairs])
+    pairs = to_section_pairs(pairslist)
+    n_fully_contained = sum([one_contains_the_other(*p) for p in pairs])
+    n_has_overlap = sum([has_overlap(*p) for p in pairs])
 
+# part 1
 print(f"{n_fully_contained=}")
+
+# part 2
 print(f"{n_has_overlap=}")
