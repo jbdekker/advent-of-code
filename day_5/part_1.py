@@ -3,7 +3,7 @@ from typing import List
 from typing import Dict
 from typing import Tuple
 
-fp = "example_input"
+fp = "input"
 
 
 def parse_stacks(v: List[str]) -> Dict[int, List[str]]:
@@ -12,8 +12,8 @@ def parse_stacks(v: List[str]) -> Dict[int, List[str]]:
     return {i: [j[i-1] for j in rows if j[i-1] != " "][::-1] for i in indices}
     
 
-def parse_move(v: str) -> Tuple[int]:  # (n_moved, from, to)
-    return tuple(map(int, itemgetter(1, 3, 5)(v.strip(" ").split(" "))))
+def parse_move(v: str) -> Tuple[int]:
+    return map(int, itemgetter(1, 3, 5)(v.strip(" ").split(" ")))
 
 
 def process_moves(stacks: Dict[int, List[str]], moves: Tuple[int]):
