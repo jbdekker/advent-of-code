@@ -1,29 +1,28 @@
-m_d = {
-    "R": (1, 0),
-    "U": (0, 1),
-    "L": (-1, 0),
-    "D": (0, -1),
-}
-
-head, tail = (0, 0), (0, 0)
-
-visited = set()
-
+cycles = [20, 60, 100, 140, 180, 220]
+v =  0
 with open("input", "r") as f:
-    moves = [l.split(" ") for l in f.read().split("\n")] 
+    instructions = [l.split(" ") for l in f.read().split("\n")] 
 
-    for move in moves:
-        m = m_d[move[0]]
-        for i in range(int(move[1])):
-            prev_head = head
-            head = (head[0] + m[0], head[1] + m[1])
+    x = 1
+    cycle = 0
+    for instruction in instructions:
+        if instruction[0] == "noop":
+            cycle += 1
 
-            dx = tail[0] - head[0]
-            dy = tail[1] - head[1]
+            if cycle in cycles:
+                v += cycle * x
 
-            if abs(dx) >= 2 or abs(dy) >= 2:
-                tail = prev_head
-            
-            visited.add(tail)
+        if instruction[0] == "addx":
+            cycle += 2
 
-print(len(visited))
+            if cycle - 1 in cycles:
+                v += (cycle-1) * x
+
+            if cycle in cycles:
+                v += cycle * x
+
+            x += int(instruction[1])
+
+
+
+print(v)

@@ -1,31 +1,35 @@
-m_d = {
-    "R": (1, 0),
-    "U": (0, 1),
-    "L": (-1, 0),
-    "D": (0, -1),
-}
+x = 1
+cycle = 0
 
-n = 10
-knots = [(0, 0) for _ in range(n)]
+def sprite(x):
+    return [x-1, x, x+1]
 
-visited = set()
 
-sign = lambda v: 1 if v > 0 else (-1 if v < 0 else 0)
+def do_cycle():
+    global cycle
+
+    if cycle % 40 == 0:
+        print()
+
+    if cycle % 40 in sprite(x):
+        print("#", end="")
+    else:
+        print(" ", end="")
+
+    cycle += 1
+
 
 with open("input", "r") as f:
-    moves = [l.split(" ") for l in f.read().split("\n")]
+    instructions = [l.split(" ") for l in f.read().split("\n")] 
 
-    for move in moves:
-        m = m_d[move[0]]
-        for i in range(int(move[1])):
-            knots[0] = (knots[0][0] + m[0], knots[0][1] + m[1])
+    for instruction in instructions:
+        if instruction[0] == "noop":
+            do_cycle()
 
-            for j in range(1, n):
-                dx = knots[j - 1][0] - knots[j][0]
-                dy = knots[j - 1][1] - knots[j][1]
-                if abs(dx) >= 2 or abs(dy) >= 2:
-                    knots[j] = (knots[j][0] + sign(dx), knots[j][1] + sign(dy))
+        if instruction[0] == "addx":
+            do_cycle()
+            do_cycle()
 
-            visited.add(knots[-1])
+            x += int(instruction[1])
 
-print(len(visited))
+print("\n\n")
