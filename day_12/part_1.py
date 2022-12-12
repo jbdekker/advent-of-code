@@ -21,12 +21,18 @@ class Node():
         return self.position == other.position
 
 
-def get_neighbours(grid: List[List[int]], parent: Node, end: Node) -> List[Node]:
+def get_neighbours(grid: List[List[int]], parent: Node, end_node: Node) -> List[Node]:
     children = []
     for action in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
         
         try: 
             child_position = (parent.position[0] + action[0], parent.position[1] + action[1])
+
+            if not 0 <= child_position[0] < len(grid):
+                continue
+
+            if not 0 <= child_position[1] < len(grid[0]):
+                continue
 
             h_parent = grid[parent.position[0]][parent.position[1]]
             h_child = grid[child_position[0]][child_position[1]]
@@ -37,13 +43,14 @@ def get_neighbours(grid: List[List[int]], parent: Node, end: Node) -> List[Node]
             child = Node(parent=parent, position=child_position)
 
             child.g = parent.g + 1
-            child.h = ((child.position[0] - end.position[0]) ** 2) + ((child.position[1] - end.position[1]) ** 2)
+            child.h = abs(child.position[0] - end_node.position[0]) + abs(child.position[1] - end_node.position[1])
+            # child.h = ((child.position[0] - end_node.position[0]) ** 2) + ((child.position[1] - end_node.position[1]) ** 2)
             child.f = child.g + child.h
 
             children.append(child)
 
         except IndexError:
-            pass
+            pass  # off-grid
         
     return children
 
@@ -87,24 +94,7 @@ def astar(grid, start, end):
             return path[::-1] # Return reversed path
 
         # Generate children
-        children = []
-        for action in [(0, -1), (0, 1), (-1, 0), (1, 0)]: # Adjacent squares
-            try:
-                # Get node position
-                child = (current_node.position[0] + action[0], current_node.position[1] + action[1])
-
-                # can we walk there?
-                h1 = grid[current_node.position[0]][current_node.position[1]]
-                h2 = grid[child[0]][child[1]]
-                if abs(h1 - h2) > 1:
-                    continue
-
-                children.append(Node(current_node, child))
-
-
-
-            except IndexError:
-                pass  # out of the grid
+        children = get_neighbours(grid, current_node, end_node)
 
         # Loop through children
         for child in children:
@@ -112,11 +102,6 @@ def astar(grid, start, end):
             # Child is on the closed list
             if child in closed_list:
                 continue
-
-            # Create the f, g, and h values
-            child.g = current_node.g + 1
-            child.h = ((child.position[0] - end_node.position[0]) ** 2) + ((child.position[1] - end_node.position[1]) ** 2)
-            child.f = child.g + child.h
 
             if child in open_list:
                 open_node = [n for n in open_list if n == child][0]
