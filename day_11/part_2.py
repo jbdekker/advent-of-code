@@ -36,7 +36,8 @@ with open("input", "r") as f:
             monkey[m]["false"] = int(line.split(" ")[-1])
 
     x = reduce(operator.mul, [v["test"] for _, v in monkey.items()])
-    n_rounds = 10000
+
+    n_rounds = 10000    
     for _ in range(n_rounds):
         for k, v in monkey.items():
             try:
@@ -45,9 +46,8 @@ with open("input", "r") as f:
                         rh_value = old
                     else:
                         rh_value = int(v["rh-value"])
-                    new = v["ops"](old, rh_value)
 
-                    new = new % x
+                    new = v["ops"](old, rh_value) % x
 
                     if new % v["test"] == 0:
                         monkey[v["true"]]["items"].append(new)

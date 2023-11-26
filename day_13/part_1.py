@@ -1,7 +1,6 @@
 import operator
 from tqdm import tqdm
 from typing import List
-from typing import Tuple
 
 def value(v):
     return ord(v)
@@ -22,40 +21,29 @@ class Node():
         return self.position == other.position
 
 
-def grid_value(grid: List[List[int]], node: Node) -> int:
-    return grid[node.position[0]][node.position[1]]
-
-
-def get_neighbours(grid: List[List[int]], parent: Node) -> List[Node]:
-    neighbours = []
-    for action in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-        neighbour_position = (parent.position[0] + action[0], parent.position[1] + action[1])
-
-        if not 0 <= neighbour_position[0] < len(grid):
-            continue
-
-        if not 0 <= neighbour_position[1] < len(grid[0]):
-            continue
-        
-        neighbour = Node(parent=parent, position=neighbour_position)
-
-        neighbours.append(neighbour)
-    return neighbours
-
-
-def get_children(grid: List[List[int]], parent: Node, end_node: Node) -> List[Node]:
+def get_neighbours(grid: List[List[int]], parent: Node, end_node: Node) -> List[Node]:
     children = []
-    for child in get_neighbours(grid, parent):
+    for action in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
         
         try: 
-            h_parent = grid[parent.position[0]][parent.position[1]]
-            h_child = grid[child.position[0]][child.position[1]]
+            child_position = (parent.position[0] + action[0], parent.position[1] + action[1])
 
-            if h_parent - h_child > 1:
+            if not 0 <= child_position[0] < len(grid):
                 continue
 
+            if not 0 <= child_position[1] < len(grid[0]):
+                continue
+
+            h_parent = grid[parent.position[0]][parent.position[1]]
+            h_child = grid[child_position[0]][child_position[1]]
+
+            if h_child - h_parent > 1:
+                continue
+
+            child = Node(parent=parent, position=child_position)
+
             child.g = parent.g + 1
-            child.h = 0
+            child.h = abs(child.position[0] - end_node.position[0]) + abs(child.position[1] - end_node.position[1])
             child.f = child.g + child.h
 
             children.append(child)
@@ -64,7 +52,7 @@ def get_children(grid: List[List[int]], parent: Node, end_node: Node) -> List[No
             pass  # off-grid
         
     return children
-        
+
 
 def astar(grid, start, end):
     """Returns a list of tuples as a path from the given start to the given end in the given maze"""
@@ -84,6 +72,10 @@ def astar(grid, start, end):
 
     # Loop until you find the end
     while open_list:
+
+        # Get the current node
+        # min_f = open_set[0].f
+        # current_index = 0
         ff = [x.f for x in open_list]
         idx = ff.index(min(ff))
 
@@ -92,7 +84,7 @@ def astar(grid, start, end):
         closed_list.append(current_node)
 
         # Found the goal
-        if grid_value(grid, current_node) == grid_value(grid, end_node):
+        if current_node == end_node:
             path = []
             current = current_node
             while current is not None:
@@ -101,8 +93,12 @@ def astar(grid, start, end):
             return path[::-1] # Return reversed path
 
         # Generate children
-        children = get_children(grid, current_node, end_node)
+        children = get_neighbours(grid, current_node, end_node)
+
+        # Loop through children
         for child in children:
+
+            # Child is on the closed list
             if child in closed_list:
                 continue
 
@@ -129,7 +125,7 @@ with open("input", "r") as f:
     grid[E[0]][E[1]] = ord("z")
     grid[S[0]][S[1]] = ord("a")
 
-    path = astar(grid, end=S, start=E)
+    path = astar(grid, S, E)
 
 print(E)
 print(S)
