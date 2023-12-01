@@ -1,5 +1,7 @@
 use std::fs::read_to_string;
+use std::collections::HashMap;
 use regex::Regex;
+
 
 fn read_lines(filename: &str) -> Vec<String> {
     let mut result = Vec::new();
@@ -11,28 +13,30 @@ fn read_lines(filename: &str) -> Vec<String> {
     result
 }
 
-fn string_to_number_repr(word: &str) -> String {
-    match word {
-        "one" => String::from("1"),
-        "two" => String::from("2"),
-        "three" => String::from("3"),
-        "four" => String::from("4"),
-        "five" => String::from("5"),
-        "six" => String::from("6"),
-        "seven" => String::from("7"),
-        "eight" => String::from("8"),
-        "nine" => String::from("9"),
-        _ => word.to_string(),
-    }
+
+fn str_to_num(word: &str) -> i32 {
+    let mapping = HashMap::from([
+        ("one", 1),
+        ("two", 2),
+        ("three", 3),
+        ("four", 4),
+        ("five", 5),
+        ("six", 6),
+        ("seven", 7),
+        ("eight", 8),
+        ("nine", 9),
+    ]);
+
+    mapping.get(&word as &str).cloned().unwrap_or_else(|| word.parse::<i32>().unwrap())
 }
+
 
 fn first_match(re: Regex, line: &str) -> String {
-    let Some(caps) = re.captures(line) else { return 0.to_string()};
-    
-    return caps[0].to_string();
+    re.captures(line).unwrap()[0].to_string()
 }
 
-fn extract_numbers(line: &str) -> i32 {
+
+fn extract_number(line: &str) -> i32 {
     let re: Regex = Regex::new(r"\d|one|two|three|four|five|six|seven|eight|nine").unwrap();
     let re_inv: Regex = Regex::new(r"\d|eno|owt|eerht|ruof|evif|xis|neves|thgie|enin").unwrap();
     let line_reversed: String = line.chars().rev().collect();
@@ -40,22 +44,17 @@ fn extract_numbers(line: &str) -> i32 {
     let first: String = first_match(re.clone(), &line);
     let last: String = first_match(re_inv.clone(), &line_reversed).chars().rev().collect();
 
-    let mut result: String = string_to_number_repr(&first);
-    result.push_str(&string_to_number_repr(&last));
-
-    println!("Line: {} -> {} {} -> {}", line, first, last, result);
-
-    return result.parse::<i32>().unwrap();
+    10 * str_to_num(&first) + str_to_num(&last)
 }
+
 
 fn main() {
     let fp: &str = "./src/input";
-
     let lines: Vec<String> = read_lines(fp);
 
     let mut numbers: Vec<i32> = Vec::new();
     for line in &lines {
-        numbers.push(extract_numbers(&line));
+        numbers.push(extract_number(&line));
     }
     
     let result: i32 = numbers.iter().sum();
