@@ -26,19 +26,19 @@ fn string_to_number_repr(word: &str) -> String {
     }
 }
 
+fn first_match(re: Regex, line: &str) -> String {
+    let Some(caps) = re.captures(line) else { return 0.to_string()};
+    
+    return caps[0].to_string();
+}
+
 fn extract_numbers(line: &str) -> i32 {
     let re: Regex = Regex::new(r"\d|one|two|three|four|five|six|seven|eight|nine").unwrap();
+    let re_inv: Regex = Regex::new(r"\d|eno|owt|eerht|ruof|evif|xis|neves|thgie|enin").unwrap();
+    let line_reversed: String = line.chars().rev().collect();
 
-    let mut first: String = String::new();
-    let mut last: String = String::new();
-    for (i, caps) in re.captures_iter(line).enumerate() {
-        if i == 0 {
-            first = caps[0].to_string();
-        }
-        last = caps[0].to_string();
-
-    }
-
+    let first: String = first_match(re.clone(), &line);
+    let last: String = first_match(re_inv.clone(), &line_reversed).chars().rev().collect();
 
     let mut result: String = string_to_number_repr(&first);
     result.push_str(&string_to_number_repr(&last));
@@ -58,9 +58,6 @@ fn main() {
         numbers.push(extract_numbers(&line));
     }
     
-    // for number in &numbers {
-    //     println!("{}", number);
-    // }
     let result: i32 = numbers.iter().sum();
     println!("Answer: {}", result);
 
