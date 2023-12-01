@@ -25,20 +25,31 @@ fn string_to_number_repr(word: &str) -> String {
         _ => word.to_string(),
     }
 }
+
 fn extract_numbers(line: &str) -> i32 {
     let re: Regex = Regex::new(r"\d|one|two|three|four|five|six|seven|eight|nine").unwrap();
 
-    let Some(caps) = re.captures(line) else { return 0};
+    let mut first: String = String::new();
+    let mut last: String = String::new();
+    for (i, caps) in re.captures_iter(line).enumerate() {
+        if i == 0 {
+            first = caps[0].to_string();
+        }
+        last = caps[0].to_string();
 
-    let mut result: String = string_to_number_repr(&caps[0]);
-    println!("{}", caps[0].to_string());
-    result.push_str(&string_to_number_repr(&caps[caps.len() - 1]));
+    }
+
+
+    let mut result: String = string_to_number_repr(&first);
+    result.push_str(&string_to_number_repr(&last));
+
+    println!("Line: {} -> {} {} -> {}", line, first, last, result);
 
     return result.parse::<i32>().unwrap();
 }
 
 fn main() {
-    let fp: &str = "./src/example-input-2";
+    let fp: &str = "./src/input";
 
     let lines: Vec<String> = read_lines(fp);
 
@@ -47,9 +58,9 @@ fn main() {
         numbers.push(extract_numbers(&line));
     }
     
-    for number in &numbers {
-        println!("{}", number);
-    }
+    // for number in &numbers {
+    //     println!("{}", number);
+    // }
     let result: i32 = numbers.iter().sum();
     println!("Answer: {}", result);
 
