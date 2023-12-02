@@ -48,7 +48,7 @@ fn extract_number(line: &str) -> i32 {
 
 
 fn main() {
-    let fp: &str = "./src/input";
+    let fp: &str = "./src/bin/input.txt";
     let lines: Vec<String> = read_lines(fp);
 
     let mut numbers: Vec<i32> = Vec::new();
