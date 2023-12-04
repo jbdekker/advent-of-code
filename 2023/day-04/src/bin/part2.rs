@@ -30,8 +30,8 @@ fn process(input: &str) -> usize {
                 .len();
 
             let multiplier = card_deck.get(&i).unwrap().clone();
-            for k in (i + 1)..(i + n * 1 + 1) {
-                card_deck.entry(k).and_modify(|x| *x += multiplier);
+            for k in 0..n {
+                card_deck.entry(k + i + 1).and_modify(|x| *x += multiplier);
             }
             multiplier
         })
