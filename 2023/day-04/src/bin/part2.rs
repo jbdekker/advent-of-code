@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -7,51 +7,35 @@ fn main() {
 }
 
 fn process(input: &str) -> usize {
-    let mut card_dec: BTreeMap<usize, usize> = BTreeMap::new();
+    let mut card_dec: BTreeMap<usize, usize> =
+        BTreeMap::from_iter(input.lines().enumerate().map(|(i, _)| (i, 1)));
 
-    let result = input
+    input
         .lines()
         .enumerate()
         .map(|(i, line)| {
-            card_dec.entry(i).and_modify(|x| *x += 1).or_insert(1);
+            let cards: Vec<BTreeSet<i32>> = line.split(':').collect::<Vec<&str>>()[1]
+                .split('|')
+                .map(|x| {
+                    x.trim()
+                        .split_whitespace()
+                        .map(|y| y.trim().parse::<i32>().unwrap())
+                })
+                .map(|z| BTreeSet::from_iter(z))
+                .collect();
 
-            let split: Vec<&str> = line.split(':').collect();
-            let winning_numbers: HashSet<i32> = HashSet::from_iter(
-                split[1].split('|').collect::<Vec<&str>>()[1]
-                    .trim()
-                    .split_whitespace()
-                    .map(|x| x.trim().parse::<i32>().unwrap()),
-            );
-
-            let my_numbers: HashSet<i32> = HashSet::from_iter(
-                split[1].split('|').collect::<Vec<&str>>()[0]
-                    .trim()
-                    .split_whitespace()
-                    .map(|x| x.trim().parse::<i32>().unwrap()),
-            );
-
-            let n: usize = winning_numbers
-                .intersection(&my_numbers)
+            let n: usize = cards[0]
+                .intersection(&cards[1])
                 .collect::<Vec<&i32>>()
                 .len();
 
             let multiplier = card_dec.get(&i).unwrap().clone();
             for k in (i + 1)..(i + n * 1 + 1) {
-                match k {
-                    _ => {
-                        card_dec
-                            .entry(k)
-                            .and_modify(|x| *x += multiplier)
-                            .or_insert(multiplier);
-                    }
-                }
+                card_dec.entry(k).and_modify(|x| *x += multiplier);
             }
             multiplier
         })
-        .sum();
-    result
-
-    // card_dec.values().sum()
+        .sum()
 }
 
 #[cfg(test)]
