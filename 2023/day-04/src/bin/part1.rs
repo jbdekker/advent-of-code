@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 fn main() {
     let input = include_str!("input.txt");
@@ -6,40 +6,31 @@ fn main() {
     dbg!(output);
 }
 
-fn process(input: &str) -> i32 {
+fn process(input: &str) -> u32 {
     input
         .lines()
         .map(|line| {
-            let split: Vec<&str> = line.split(':').collect();
-            let _game: &str = split[0].trim();
+            let cards: Vec<BTreeSet<i32>> = line.split(':').collect::<Vec<&str>>()[1]
+                .split('|')
+                .map(|x| {
+                    x.trim()
+                        .split_whitespace()
+                        .map(|y| y.trim().parse::<i32>().unwrap())
+                })
+                .map(|z| BTreeSet::from_iter(z))
+                .collect();
 
-            let winning_numbers: HashSet<i32> = HashSet::from_iter(
-                split[1].split('|').collect::<Vec<&str>>()[1]
-                    .trim()
-                    .split_whitespace()
-                    .map(|x| x.trim().parse::<i32>().unwrap()),
-            );
-
-            let my_numbers: HashSet<i32> = HashSet::from_iter(
-                split[1].split('|').collect::<Vec<&str>>()[0]
-                    .trim()
-                    .split_whitespace()
-                    .map(|x| x.trim().parse::<i32>().unwrap()),
-            );
-
-            let intersect: usize = winning_numbers
-                .intersection(&my_numbers)
+            let n = cards[0]
+                .intersection(&cards[1])
                 .collect::<Vec<&i32>>()
-                .len();
+                .len() as u32;
 
-            let two: i32 = 2;
-
-            match intersect {
+            match n {
                 0 => 0,
-                _ => two.pow(intersect as u32 - 1),
+                _ => (2 as u32).pow(n - 1),
             }
         })
-        .sum::<i32>()
+        .sum::<u32>()
 }
 
 #[cfg(test)]
