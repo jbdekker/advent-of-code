@@ -13,8 +13,9 @@ fn process(input: &str) -> u32 {
         .map(|line| {
             let (mine, winning) = line.split(':').collect::<Vec<&str>>()[1]
                 .split('|')
-                .map(|x| x.split_whitespace().map(|y| y.parse::<i32>().unwrap()))
-                .map(|z| BTreeSet::from_iter(z))
+                .map(|x| {
+                    BTreeSet::from_iter(x.split_whitespace().map(|y| y.parse::<i32>().unwrap()))
+                })
                 .collect_tuple()
                 .unwrap();
 
