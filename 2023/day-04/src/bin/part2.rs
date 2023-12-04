@@ -7,7 +7,7 @@ fn main() {
 }
 
 fn process(input: &str) -> usize {
-    let mut card_dec: BTreeMap<usize, usize> =
+    let mut card_deck: BTreeMap<usize, usize> =
         BTreeMap::from_iter(input.lines().enumerate().map(|(i, _)| (i, 1)));
 
     input
@@ -29,9 +29,9 @@ fn process(input: &str) -> usize {
                 .collect::<Vec<&i32>>()
                 .len();
 
-            let multiplier = card_dec.get(&i).unwrap().clone();
+            let multiplier = card_deck.get(&i).unwrap().clone();
             for k in (i + 1)..(i + n * 1 + 1) {
-                card_dec.entry(k).and_modify(|x| *x += multiplier);
+                card_deck.entry(k).and_modify(|x| *x += multiplier);
             }
             multiplier
         })
