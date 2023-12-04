@@ -19,11 +19,9 @@ fn process(input: &str) -> u32 {
                 .collect_tuple()
                 .unwrap();
 
-            let n = mine.intersection(&winning).collect::<Vec<&i32>>().len();
-
-            match n {
+            match mine.intersection(&winning).collect::<Vec<&i32>>().len() {
                 0 => None,
-                _ => Some(1 << n - 1),
+                n => Some(1 << n - 1),
             }
         })
         .sum()
