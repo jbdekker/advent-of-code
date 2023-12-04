@@ -15,21 +15,14 @@ fn process(input: &str) -> usize {
         .lines()
         .enumerate()
         .map(|(i, line)| {
-            let (my_cards, winning_cards) = line.split(':').collect::<Vec<&str>>()[1]
+            let (mine, winning) = line.split(':').collect::<Vec<&str>>()[1]
                 .split('|')
-                .map(|x| {
-                    x.trim()
-                        .split_whitespace()
-                        .map(|y| y.trim().parse::<i32>().unwrap())
-                })
+                .map(|x| x.split_whitespace().map(|y| y.parse::<i32>().unwrap()))
                 .map(|z| BTreeSet::from_iter(z))
                 .collect_tuple()
                 .unwrap();
 
-            let n: usize = my_cards
-                .intersection(&winning_cards)
-                .collect::<Vec<&i32>>()
-                .len();
+            let n: usize = mine.intersection(&winning).collect::<Vec<&i32>>().len();
 
             let multiplier = card_deck.get(&i).unwrap().clone();
             for k in 0..n {
