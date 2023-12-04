@@ -14,22 +14,21 @@ fn process(input: &str) -> usize {
     input
         .lines()
         .enumerate()
-        .map(|(i, line)| {
-            let (mine, winning) = line.split(':').collect::<Vec<&str>>()[1]
+        .filter_map(|(i, line)| {
+            let (mine, winning) = line
+                .split(':')
+                .last()?
                 .split('|')
-                .map(|x| {
-                    BTreeSet::from_iter(x.split_whitespace().map(|y| y.parse::<i32>().unwrap()))
-                })
-                .collect_tuple()
-                .unwrap();
+                .map(|x| BTreeSet::from_iter(x.split_whitespace()))
+                .collect_tuple()?;
 
-            let n = mine.intersection(&winning).collect::<Vec<&i32>>().len();
+            let n = mine.intersection(&winning).collect::<Vec<&&str>>().len();
 
-            let multiplier = card_deck.get(&i).unwrap().clone();
+            let multiplier = card_deck.get(&i)?.clone();
             for k in 0..n {
                 card_deck.entry(k + i + 1).and_modify(|x| *x += multiplier);
             }
-            multiplier
+            Some(multiplier)
         })
         .sum()
 }

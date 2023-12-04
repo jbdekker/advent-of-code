@@ -11,15 +11,14 @@ fn process(input: &str) -> u32 {
     input
         .lines()
         .filter_map(|line| {
-            let (mine, winning) = line.split(':').collect::<Vec<&str>>()[1]
+            let (mine, winning) = line
+                .split(':')
+                .last()?
                 .split('|')
-                .map(|x| {
-                    BTreeSet::from_iter(x.split_whitespace().map(|y| y.parse::<i32>().unwrap()))
-                })
-                .collect_tuple()
-                .unwrap();
+                .map(|x| BTreeSet::from_iter(x.split_whitespace()))
+                .collect_tuple()?;
 
-            match mine.intersection(&winning).collect::<Vec<&i32>>().len() {
+            match mine.intersection(&winning).collect::<Vec<&&str>>().len() {
                 0 => None,
                 n => Some(1 << n - 1),
             }
