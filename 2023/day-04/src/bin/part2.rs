@@ -23,7 +23,7 @@ fn process(input: &str) -> usize {
                 .collect_tuple()
                 .unwrap();
 
-            let n: usize = mine.intersection(&winning).collect::<Vec<&i32>>().len();
+            let n = mine.intersection(&winning).collect::<Vec<&i32>>().len();
 
             let multiplier = card_deck.get(&i).unwrap().clone();
             for k in 0..n {

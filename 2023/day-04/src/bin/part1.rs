@@ -10,7 +10,7 @@ fn main() {
 fn process(input: &str) -> u32 {
     input
         .lines()
-        .map(|line| {
+        .filter_map(|line| {
             let (mine, winning) = line.split(':').collect::<Vec<&str>>()[1]
                 .split('|')
                 .map(|x| {
@@ -19,14 +19,14 @@ fn process(input: &str) -> u32 {
                 .collect_tuple()
                 .unwrap();
 
-            let n = mine.intersection(&winning).collect::<Vec<&i32>>().len() as u32;
+            let n = mine.intersection(&winning).collect::<Vec<&i32>>().len();
 
             match n {
-                0 => 0,
-                _ => (2 as u32).pow(n - 1),
+                0 => None,
+                _ => Some(1 << n - 1),
             }
         })
-        .sum::<u32>()
+        .sum()
 }
 
 #[cfg(test)]
