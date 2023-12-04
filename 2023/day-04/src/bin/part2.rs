@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::collections::{BTreeMap, BTreeSet};
 
 fn main() {
@@ -14,7 +15,7 @@ fn process(input: &str) -> usize {
         .lines()
         .enumerate()
         .map(|(i, line)| {
-            let cards: Vec<BTreeSet<i32>> = line.split(':').collect::<Vec<&str>>()[1]
+            let (my_cards, winning_cards) = line.split(':').collect::<Vec<&str>>()[1]
                 .split('|')
                 .map(|x| {
                     x.trim()
@@ -22,10 +23,11 @@ fn process(input: &str) -> usize {
                         .map(|y| y.trim().parse::<i32>().unwrap())
                 })
                 .map(|z| BTreeSet::from_iter(z))
-                .collect();
+                .collect_tuple()
+                .unwrap();
 
-            let n: usize = cards[0]
-                .intersection(&cards[1])
+            let n: usize = my_cards
+                .intersection(&winning_cards)
                 .collect::<Vec<&i32>>()
                 .len();
 
