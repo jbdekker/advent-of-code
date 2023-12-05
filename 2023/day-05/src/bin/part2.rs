@@ -114,15 +114,6 @@ fn process(input: &str) -> i64 {
     fn get_mapping(mapping: &BTreeMap<&str, Map>, key: &str, ids: Vec<i64>) -> Vec<i64> {
         let map: &Map = mapping.get(key).unwrap();
 
-        // let max_value = map.max_destination();
-        // println!("Length before: {}", ids.len());
-
-        // let ids: Vec<i64> = ids.into_iter().filter(|x| x <= &max_value).collect();
-
-        // println!("Length after: {}", ids.len());
-
-        // let mut out: Vec<i64> = Vec::new();
-
         ids.into_iter()
             .map(|i| {
                 if map.contains(i) {
@@ -133,14 +124,6 @@ fn process(input: &str) -> i64 {
             })
             .flatten()
             .collect()
-        // for i in ids.iter() {
-        //     if map.contains(*i) {
-        //         out.append(&mut map.map(*i));
-        //     } else {
-        //         out.push(*i);
-        //     }
-        // }
-        // out
     }
 
     let soils: Vec<i64> = get_mapping(&maps, "seed-to-soil", seeds.into_iter().collect());
