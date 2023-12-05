@@ -36,27 +36,38 @@ impl MappingRule {
                 Vec::from([self.destination_start..self.map(source_end)]),
                 Vec::from([range.start..self.source_start, source_end..range.end]),
             )
-        } else if range.start < self.source_start && range.end < source_end {
+        } else if range.start < self.source_start && range.end <= source_end {
             //         |--------|
             //      |-------|
+            //   or,
+            //         |--------|
+            //      |-----------|
             (
                 Vec::from([self.destination_start..self.map(range.end)]), // center bit
                 Vec::from([range.start..self.source_start]),              // left bit
             )
-        } else if range.start > self.source_start && range.end > source_end {
+        } else if range.start >= self.source_start && range.end > source_end {
             //         |--------|
             //              |-------|
+            //   or,
+            //         |--------|
+            //         |------------|
             (
                 Vec::from([self.map(range.start)..self.map(source_end)]), // center bit
                 Vec::from([source_end..range.end]),                       // right bit
             )
-        } else {
+        } else if range.start >= self.source_start && range.end <= source_end {
             //         |-----------------|
             //              |-------|
+            //   or,
+            //         |-----------------|
+            //         |-----------------|
             (
                 Vec::from([self.map(range.start)..self.map(range.end)]),
                 Vec::new(),
             )
+        } else {
+            (Vec::new(), Vec::new())
         }
     }
 }
@@ -150,24 +161,21 @@ fn process(input: &str) -> i64 {
         map.map_range(ranges)
     }
 
+    // let names = Vec::from(["
+
+    // "]);
+
     let soils: Vec<std::ops::Range<i64>> = apply_mapping(&maps, "seed-to-soil", seed_ranges);
-    println!("soils: {soils:?}");
     let fertilizers: Vec<std::ops::Range<i64>> = apply_mapping(&maps, "soil-to-fertilizer", soils);
-    // println!("fertilizers: {fertilizers:?}");
     let waters: Vec<std::ops::Range<i64>> =
         apply_mapping(&maps, "fertilizer-to-water", fertilizers);
-    // println!("waters: {waters:?}");
     let lights: Vec<std::ops::Range<i64>> = apply_mapping(&maps, "water-to-light", waters);
-    // println!("lights: {lights:?}");
     let temperatures: Vec<std::ops::Range<i64>> =
         apply_mapping(&maps, "light-to-temperature", lights);
-    // println!("temperatures: {temperatures:?}");
     let humidities: Vec<std::ops::Range<i64>> =
         apply_mapping(&maps, "temperature-to-humidity", temperatures);
-    // println!("humidities: {humidities:?}");
     let locations: Vec<std::ops::Range<i64>> =
         apply_mapping(&maps, "humidity-to-location", humidities);
-    // println!("locations: {locations:?}");
 
     locations
         .into_iter()
@@ -183,7 +191,7 @@ mod tests {
     #[test]
     fn it_works() {
         let result = process(
-            "seeds: 98 14 55 13
+            "seeds: 79 14 55 13
 
 seed-to-soil map:
 50 98 2
