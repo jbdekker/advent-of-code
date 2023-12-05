@@ -1,5 +1,3 @@
-// https://blog.adamchalmers.com/nom-chars/
-
 use regex::Regex;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -24,10 +22,6 @@ impl Range {
     fn map(&self, i: i64) -> i64 {
         i - self.source_start + self.destination_start
     }
-
-    // fn max_destination(&self) -> i64 {
-    //     self.destination_start + self.length - 1
-    // }
 }
 
 #[derive(Debug)]
@@ -49,14 +43,6 @@ impl Map {
             })
             .collect()
     }
-
-    // fn max_destination(&self) -> i64 {
-    //     self.ranges
-    //         .iter()
-    //         .map(|x| x.max_destination())
-    //         .max()
-    //         .unwrap()
-    // }
 }
 
 fn process(input: &str) -> i64 {
