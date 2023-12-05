@@ -1,5 +1,7 @@
 use regex::Regex;
+use std::cmp::{max, min};
 use std::collections::BTreeMap;
+use std::ops::Range;
 
 fn main() {
     let input = include_str!("input.txt");
@@ -19,56 +21,27 @@ impl MappingRule {
         i - self.source_start + self.destination_start
     }
 
-    fn map_range(
-        &self,
-        range: std::ops::Range<i64>,
-    ) -> (Vec<std::ops::Range<i64>>, Vec<std::ops::Range<i64>>) {
-        // (matched, unmatched)
+    fn map_range(&self, range: Range<i64>) -> (Vec<Range<i64>>, Vec<Range<i64>>) {
         let source_end: i64 = self.source_start + self.length;
 
-        if range.start >= source_end || range.end <= self.source_start {
-            // No overlap!
-            (Vec::new(), Vec::from([range]))
-        } else if range.start < self.source_start && range.end > source_end {
-            //         |-------|
-            //     |---------------|
-            (
-                Vec::from([self.destination_start..self.map(source_end)]),
-                Vec::from([range.start..self.source_start, source_end..range.end]),
-            )
-        } else if range.start < self.source_start && range.end <= source_end {
-            //         |--------|
-            //      |-------|
-            //   or,
-            //         |--------|
-            //      |-----------|
-            (
-                Vec::from([self.destination_start..self.map(range.end)]), // center bit
-                Vec::from([range.start..self.source_start]),              // left bit
-            )
-        } else if range.start >= self.source_start && range.end > source_end {
-            //         |--------|
-            //              |-------|
-            //   or,
-            //         |--------|
-            //         |------------|
-            (
-                Vec::from([self.map(range.start)..self.map(source_end)]), // center bit
-                Vec::from([source_end..range.end]),                       // right bit
-            )
-        } else if range.start >= self.source_start && range.end <= source_end {
-            //         |-----------------|
-            //              |-------|
-            //   or,
-            //         |-----------------|
-            //         |-----------------|
-            (
-                Vec::from([self.map(range.start)..self.map(range.end)]),
-                Vec::new(),
-            )
-        } else {
-            (Vec::new(), Vec::new())
+        let mut matched: Vec<Range<i64>> = Vec::new();
+        let mut unmatched: Vec<Range<i64>> = Vec::new();
+
+        if range.start < self.source_start {
+            unmatched.push(range.start..min(range.end, self.source_start))
         }
+
+        if range.end > source_end {
+            unmatched.push(max(range.start, source_end)..range.end)
+        }
+
+        if range.start < source_end && range.end > self.source_start {
+            matched.push(
+                self.map(max(range.start, self.source_start))..self.map(min(range.end, source_end)),
+            )
+        }
+
+        (matched, unmatched)
     }
 }
 
@@ -78,12 +51,12 @@ struct Map {
 }
 
 impl Map {
-    fn map_range(&self, ranges: Vec<std::ops::Range<i64>>) -> Vec<std::ops::Range<i64>> {
-        let mut destination_ranges: Vec<std::ops::Range<i64>> = Vec::new();
+    fn map_range(&self, ranges: Vec<Range<i64>>) -> Vec<Range<i64>> {
+        let mut destination_ranges: Vec<Range<i64>> = Vec::new();
 
         let mut todo = ranges;
         for rule in self.mapping_rules.iter() {
-            let mut unmatched_ranges: Vec<std::ops::Range<i64>> = Vec::new();
+            let mut unmatched_ranges: Vec<Range<i64>> = Vec::new();
             for range in todo.into_iter() {
                 let (mut matched, mut unmatched) = rule.map_range(range);
 
@@ -102,7 +75,7 @@ fn process(input: &str) -> i64 {
     let mut maps: BTreeMap<&str, Map> = BTreeMap::new();
     let mut last_name: &str = "";
 
-    let mut seed_ranges: Vec<std::ops::Range<i64>> = Vec::new();
+    let mut seed_ranges: Vec<Range<i64>> = Vec::new();
 
     let _ = input
         .lines()
