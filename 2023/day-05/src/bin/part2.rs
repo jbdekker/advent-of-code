@@ -151,16 +151,6 @@ fn process(input: &str) -> i64 {
         })
         .collect::<Vec<&str>>();
 
-    fn apply_mapping(
-        mapping: &BTreeMap<&str, Map>,
-        key: &str,
-        ranges: Vec<std::ops::Range<i64>>,
-    ) -> Vec<std::ops::Range<i64>> {
-        let map: &Map = mapping.get(key).unwrap();
-
-        map.map_range(ranges)
-    }
-
     let names = Vec::from([
         "seed-to-soil",
         "soil-to-fertilizer",
@@ -171,12 +161,15 @@ fn process(input: &str) -> i64 {
         "humidity-to-location",
     ]);
 
-    let mut result = seed_ranges;
-    for name in names.into_iter() {
-        result = apply_mapping(&maps, name, result);
-    }
-
-    result.into_iter().map(|range| range.start).min().unwrap()
+    names
+        .into_iter()
+        .fold(seed_ranges, |acc, name| {
+            maps.get(name).unwrap().map_range(acc)
+        })
+        .into_iter()
+        .map(|range| range.start)
+        .min()
+        .unwrap()
 }
 
 #[cfg(test)]
