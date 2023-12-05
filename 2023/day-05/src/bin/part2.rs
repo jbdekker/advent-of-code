@@ -161,27 +161,22 @@ fn process(input: &str) -> i64 {
         map.map_range(ranges)
     }
 
-    // let names = Vec::from(["
+    let names = Vec::from([
+        "seed-to-soil",
+        "soil-to-fertilizer",
+        "fertilizer-to-water",
+        "water-to-light",
+        "light-to-temperature",
+        "temperature-to-humidity",
+        "humidity-to-location",
+    ]);
 
-    // "]);
+    let mut result = seed_ranges;
+    for name in names.into_iter() {
+        result = apply_mapping(&maps, name, result);
+    }
 
-    let soils: Vec<std::ops::Range<i64>> = apply_mapping(&maps, "seed-to-soil", seed_ranges);
-    let fertilizers: Vec<std::ops::Range<i64>> = apply_mapping(&maps, "soil-to-fertilizer", soils);
-    let waters: Vec<std::ops::Range<i64>> =
-        apply_mapping(&maps, "fertilizer-to-water", fertilizers);
-    let lights: Vec<std::ops::Range<i64>> = apply_mapping(&maps, "water-to-light", waters);
-    let temperatures: Vec<std::ops::Range<i64>> =
-        apply_mapping(&maps, "light-to-temperature", lights);
-    let humidities: Vec<std::ops::Range<i64>> =
-        apply_mapping(&maps, "temperature-to-humidity", temperatures);
-    let locations: Vec<std::ops::Range<i64>> =
-        apply_mapping(&maps, "humidity-to-location", humidities);
-
-    locations
-        .into_iter()
-        .map(|range| range.start)
-        .min()
-        .unwrap()
+    result.into_iter().map(|range| range.start).min().unwrap()
 }
 
 #[cfg(test)]
