@@ -1,7 +1,7 @@
 // https://blog.adamchalmers.com/nom-chars/
 
-use std::collections::{BTreeSet, BTreeMap};
 use regex::Regex;
+use std::collections::{BTreeMap, BTreeSet};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -24,6 +24,10 @@ impl Range {
     fn map(&self, i: i64) -> i64 {
         i - self.source_start + self.destination_start
     }
+
+    // fn max_destination(&self) -> i64 {
+    //     self.destination_start + self.length - 1
+    // }
 }
 
 #[derive(Debug)]
@@ -33,73 +37,110 @@ struct Map {
 
 impl Map {
     fn contains(&self, i: i64) -> bool {
-        self.ranges.iter().any(|r| r.contains(i))}
+        self.ranges.iter().any(|r| r.contains(i))
+    }
 
     fn map(&self, i: i64) -> Vec<i64> {
-        self.ranges.iter().filter_map(|x| {
-            match x.contains(i) {
+        self.ranges
+            .iter()
+            .filter_map(|x| match x.contains(i) {
                 true => Some(x.map(i)),
                 false => None,
-            }
-        }
-    ).collect()
-}
+            })
+            .collect()
+    }
+
+    // fn max_destination(&self) -> i64 {
+    //     self.ranges
+    //         .iter()
+    //         .map(|x| x.max_destination())
+    //         .max()
+    //         .unwrap()
+    // }
 }
 
 fn process(input: &str) -> i64 {
-
     let mut seeds: BTreeSet<i64> = BTreeSet::new();
     let mut maps: BTreeMap<&str, Map> = BTreeMap::new();
     let mut last_name: &str = "";
 
-    let _ = input.lines().filter_map(|line| {
+    let _ = input
+        .lines()
+        .filter_map(|line| {
+            let re = Regex::new(r"(seeds:)\s*(((\d+)\s*)+)").unwrap();
+            if re.is_match(line) {
+                let caps = re.captures(line).unwrap();
+                let values = {
+                    let items = caps
+                        .get(2)
+                        .unwrap()
+                        .as_str()
+                        .split_whitespace()
+                        .map(|x| x.parse::<i64>().unwrap())
+                        .collect::<Vec<i64>>();
 
-        let re = Regex::new(r"(seeds:)\s*(((\d+)\s*)+)").unwrap();
-        if re.is_match(line) {
-            let caps = re.captures(line).unwrap();
-            let values = {
-                let items = caps.get(2).unwrap().as_str().split_whitespace().map(|x| x.parse::<i64>().unwrap()).collect::<Vec<i64>>();
-                
-                let value_iter = items.chunks(2).map(|p| {
-                    let end: i64 = p[0] + p[1];
-                    (p[0]..end).map(i64::from).collect::<Vec<i64>>()      
-                });
+                    let value_iter = items.chunks(2).map(|p| {
+                        let end: i64 = p[0] + p[1];
+                        (p[0]..end).map(i64::from).collect::<Vec<i64>>()
+                    });
 
-                let out = value_iter.collect::<Vec<Vec<i64>>>().into_iter().flatten();
-                out.clone()
-            };
-            seeds = BTreeSet::from_iter(values);
-        }
+                    value_iter.collect::<Vec<Vec<i64>>>().into_iter().flatten()
+                };
+                seeds = BTreeSet::from_iter(values);
+                println!("# seeds: {}", seeds.len());
+            }
 
-        let re: Regex = Regex::new(r"^(\S+) map:$").unwrap(); 
-        if re.is_match(line) {
-            let caps = re.captures(line).unwrap();
-            last_name = caps.get(1).unwrap().as_str();
-            maps.insert(last_name, Map {ranges: Vec::new()});
-        }
+            let re: Regex = Regex::new(r"^(\S+) map:$").unwrap();
+            if re.is_match(line) {
+                let caps = re.captures(line).unwrap();
+                last_name = caps.get(1).unwrap().as_str();
+                maps.insert(last_name, Map { ranges: Vec::new() });
+            }
 
-        let re: Regex = Regex::new(r"^(\d+) (\d+) (\d+)$").unwrap();
-        if re.is_match(line) {
-            let caps = re.captures(line).unwrap();
-            let range = Range {destination_start: caps.get(1).unwrap().as_str().parse::<i64>().unwrap(), source_start: caps.get(2).unwrap().as_str().parse::<i64>().unwrap(), length: caps.get(3).unwrap().as_str().parse::<i64>().unwrap()};
-            maps.entry(last_name).and_modify(|x| x.ranges.push(range));
-        }
-        None
-    }).collect::<Vec<&str>>();
+            let re: Regex = Regex::new(r"^(\d+) (\d+) (\d+)$").unwrap();
+            if re.is_match(line) {
+                let caps = re.captures(line).unwrap();
+                let range = Range {
+                    destination_start: caps.get(1).unwrap().as_str().parse::<i64>().unwrap(),
+                    source_start: caps.get(2).unwrap().as_str().parse::<i64>().unwrap(),
+                    length: caps.get(3).unwrap().as_str().parse::<i64>().unwrap(),
+                };
+                maps.entry(last_name).and_modify(|x| x.ranges.push(range));
+            }
+            None
+        })
+        .collect::<Vec<&str>>();
 
     fn get_mapping(mapping: &BTreeMap<&str, Map>, key: &str, ids: Vec<i64>) -> Vec<i64> {
         let map: &Map = mapping.get(key).unwrap();
 
-        let mut out: Vec<i64> = Vec::new();
-        for i in ids.iter() {
-            if map.contains(*i) {
-                out.append(&mut map.map(*i));
-            }
-            else {
-                out.push(*i);
-            }
-        }
-        out
+        // let max_value = map.max_destination();
+        // println!("Length before: {}", ids.len());
+
+        // let ids: Vec<i64> = ids.into_iter().filter(|x| x <= &max_value).collect();
+
+        // println!("Length after: {}", ids.len());
+
+        // let mut out: Vec<i64> = Vec::new();
+
+        ids.into_iter()
+            .map(|i| {
+                if map.contains(i) {
+                    map.map(i)
+                } else {
+                    Vec::from([i])
+                }
+            })
+            .flatten()
+            .collect()
+        // for i in ids.iter() {
+        //     if map.contains(*i) {
+        //         out.append(&mut map.map(*i));
+        //     } else {
+        //         out.push(*i);
+        //     }
+        // }
+        // out
     }
 
     let soils: Vec<i64> = get_mapping(&maps, "seed-to-soil", seeds.into_iter().collect());
@@ -125,7 +166,8 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = process("seeds: 79 14 55 13
+        let result = process(
+            "seeds: 79 14 55 13
 
 seed-to-soil map:
 50 98 2
@@ -157,7 +199,8 @@ temperature-to-humidity map:
 
 humidity-to-location map:
 60 56 37
-56 93 4");
+56 93 4",
+        );
         assert_eq!(result, 46)
     }
 }
