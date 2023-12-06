@@ -9,16 +9,12 @@ fn main() {
 fn process(input: &str) -> i64 {
     let (time_limits, distance_records) = input.lines().into_iter().map(|line| {
         line.trim().split(":").skip(1).map(|num| {
-            num.replace(" ", "").parse::<i64>().expect("no es bueno!")
+            num.replace(" ", "").parse::<f64>().expect("no es bueno!")
         }
-        ).collect::<Vec<i64>>()
+        ).collect::<Vec<f64>>()
     }).collect_tuple().unwrap();
 
-    fn abc_limits(a: i64, b: i64, c: i64) -> RangeInclusive<i64> {
-        let a = a as f64;
-        let b = b as f64;
-        let c = c as f64;
-
+    fn abc_limits(a: f64, b: f64, c: f64) -> RangeInclusive<i64> {
         let (lower, upper) = (
             ((-b + (b*b - 4.0*a*c).sqrt()) / (2.0 * a)) as i64 + 1,
             ((-b - (b*b - 4.0*a*c).sqrt()) / (2.0 * a)).ceil() as i64 - 1,
@@ -27,7 +23,7 @@ fn process(input: &str) -> i64 {
     }
 
     let product_of_ways = (0..time_limits.len()).into_iter().map(|i: usize| {
-        abc_limits(-1, time_limits[i], -distance_records[i]).try_len().expect("no es bueno!") as i64
+        abc_limits(-1., time_limits[i], -distance_records[i]).try_len().expect("no es bueno!") as i64
     }).reduce(|a, b| a * b).unwrap();
     product_of_ways
 }
