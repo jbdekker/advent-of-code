@@ -1,6 +1,6 @@
 use itertools::Itertools;
-use std::collections::BTreeMap;
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 
 fn main() {
     let input = include_str!("input.txt");
@@ -22,17 +22,16 @@ impl Hand {
         } else if self.value < other.value {
             Ordering::Less
         } else {
-            for (a, b) in self.cards.iter().zip(other.cards.iter())
-                {
-                    println!("{a:?} {b:?}");
-                    let value_a = *card_values.get(&a).unwrap();
-                    let value_b = *card_values.get(&b).unwrap();
-                    if value_a > value_b {
-                        return Ordering::Greater
-                    } else if value_a < value_b {
-                        return Ordering::Less
-                    }
+            for (a, b) in self.cards.iter().zip(other.cards.iter()) {
+                println!("{a:?} {b:?}");
+                let value_a = *card_values.get(&a).unwrap();
+                let value_b = *card_values.get(&b).unwrap();
+                if value_a > value_b {
+                    return Ordering::Greater;
+                } else if value_a < value_b {
+                    return Ordering::Less;
                 }
+            }
             println!(">>>> ORDERING::EQUAL <<<<");
             dbg!(&self);
             dbg!(other);
@@ -72,29 +71,33 @@ fn process(input: &str) -> i32 {
                 .map(|(k, v)| (k, v.count() as i32))
                 .collect();
 
-            card_counts.sort_by(|&(_, a), &(_, b)| b.cmp(&a) );
-
-            // dbg!(&card_counts);
+            card_counts.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
 
             let max_card_count = card_counts[0].1;
             let hand_value = {
-                if max_card_count == 5 { // five of a kind
+                if max_card_count == 5 {
+                    // five of a kind
                     6
-                } else if max_card_count == 4 { // four of a kind
+                } else if max_card_count == 4 {
+                    // four of a kind
                     5
-                } else if (
-                    card_counts[0..2].iter().map(|(_, b)| b).collect::<Vec<_>>()) == vec![&3, &2]
+                } else if (card_counts[0..2].iter().map(|(_, b)| b).collect::<Vec<_>>())
+                    == vec![&3, &2]
                 {
                     4
-                } else if max_card_count == 3 { // three of a kind
+                } else if max_card_count == 3 {
+                    // three of a kind
                     3
-                } else if (
-                    card_counts[0..2].iter().map(|(_, b)| b).collect::<Vec<_>>()) == vec![&2, &2]
-                { // two pair
+                } else if (card_counts[0..2].iter().map(|(_, b)| b).collect::<Vec<_>>())
+                    == vec![&2, &2]
+                {
+                    // two pair
                     2
-                } else if max_card_count == 2 {  // one pair
+                } else if max_card_count == 2 {
+                    // one pair
                     1
-                } else { // high card
+                } else {
+                    // high card
                     0
                 }
             };
@@ -108,18 +111,11 @@ fn process(input: &str) -> i32 {
         .collect::<Vec<Hand>>();
 
     hands.sort_by(|a, b| a.cmp(b, &card_values));
-
-    // dbg!(&hands);
-    // order the hands by value
-
-    // dbg!(hands);
-    hands.iter().enumerate().map(|(i, hand)| {
-        let rank = (i+1) as i32;
-        dbg!(&hand);
-        dbg!(&rank);
-        println!();
-        rank * hand.bid
-    }).sum()
+    hands
+        .iter()
+        .enumerate()
+        .map(|(i, hand)| (i + 1) as i32 * hand.bid)
+        .sum()
 }
 
 #[cfg(test)]
