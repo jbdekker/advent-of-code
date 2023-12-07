@@ -23,7 +23,6 @@ impl Hand {
             Ordering::Less
         } else {
             for (a, b) in self.cards.iter().zip(other.cards.iter()) {
-                println!("{a:?} {b:?}");
                 let value_a = *card_values.get(&a).unwrap();
                 let value_b = *card_values.get(&b).unwrap();
                 if value_a > value_b {
@@ -32,9 +31,6 @@ impl Hand {
                     return Ordering::Less;
                 }
             }
-            println!(">>>> ORDERING::EQUAL <<<<");
-            dbg!(&self);
-            dbg!(other);
             Ordering::Equal
         }
     }
