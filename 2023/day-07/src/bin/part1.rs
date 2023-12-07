@@ -1,5 +1,6 @@
 use itertools::Itertools;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
+use std::cmp::Ordering;
 
 fn main() {
     let input = include_str!("input.txt");
@@ -8,34 +9,46 @@ fn main() {
 }
 
 #[derive(Debug)]
-struct Card {
-    card: char,
-}
-
-impl Card {
-    fn value(&self, map: &BTreeMap<char, i32>) -> i32 {
-        *map.get(&self.card).expect("no es bueno!")
-    }
-}
-
-#[derive(Debug)]
 struct Hand {
-    cards: Vec<Card>,
+    cards: Vec<char>,
     bid: i32,
     value: i32,
 }
 
 impl Hand {
-    fn value(&self) {}
+    fn cmp(&self, other: &Hand, card_values: &BTreeMap<char, i32>) -> Ordering {
+        if self.value > other.value {
+            Ordering::Greater
+        } else if self.value < other.value {
+            Ordering::Less
+        } else {
+            for (a, b) in self.cards.iter().zip(other.cards.iter())
+                {
+                    println!("{a:?} {b:?}");
+                    let value_a = *card_values.get(&a).unwrap();
+                    let value_b = *card_values.get(&b).unwrap();
+                    if value_a > value_b {
+                        return Ordering::Greater
+                    } else if value_a < value_b {
+                        return Ordering::Less
+                    }
+                }
+            println!(">>>> ORDERING::EQUAL <<<<");
+            dbg!(&self);
+            dbg!(other);
+            Ordering::Equal
+        }
+    }
 }
 
 fn process(input: &str) -> i32 {
     let card_values = BTreeMap::from([
-        ('A', 11),
-        ('K', 10),
-        ('Q', 9),
-        ('J', 8),
-        ('T', 7),
+        ('A', 12),
+        ('K', 11),
+        ('Q', 10),
+        ('J', 9),
+        ('T', 8),
+        ('9', 7),
         ('8', 6),
         ('7', 5),
         ('6', 4),
@@ -45,13 +58,13 @@ fn process(input: &str) -> i32 {
         ('2', 0),
     ]);
 
-    let hands = input
+    let mut hands = input
         .lines()
         .into_iter()
         .map(|line| {
             let x: Vec<_> = line.split_whitespace().collect();
 
-            let card_counts: BTreeMap<char, i32> = x[0]
+            let mut card_counts: Vec<(char, i32)> = x[0]
                 .chars()
                 .sorted()
                 .group_by(|&k| k)
@@ -59,55 +72,54 @@ fn process(input: &str) -> i32 {
                 .map(|(k, v)| (k, v.count() as i32))
                 .collect();
 
-            let max_card_count = card_counts.values().max().unwrap();
+            card_counts.sort_by(|&(_, a), &(_, b)| b.cmp(&a) );
+
+            // dbg!(&card_counts);
+
+            let max_card_count = card_counts[0].1;
             let hand_value = {
-                if *max_card_count == 5 {
+                if max_card_count == 5 { // five of a kind
                     6
-                } else if *max_card_count == 4 {
+                } else if max_card_count == 4 { // four of a kind
                     5
-                } else if dbg!(
-                    card_counts
-                        .values()
-                        .rev()
-                        .take(2)
-                        .collect::<BTreeSet<&i32>>()
-                        .intersection(&BTreeSet::from([&3, &2]))
-                        .collect()
-                        == []
-                ) {
+                } else if (
+                    card_counts[0..2].iter().map(|(_, b)| b).collect::<Vec<_>>()) == vec![&3, &2]
+                {
                     4
-                } else if *max_card_count == 3 {
+                } else if max_card_count == 3 { // three of a kind
                     3
-                } else if dbg!(
-                    card_counts
-                        .values()
-                        .rev()
-                        .take(2)
-                        .collect::<BTreeSet<&i32>>()
-                        .intersection(&BTreeSet::from([&2]))
-                        .collect()
-                        == []
-                ) {
+                } else if (
+                    card_counts[0..2].iter().map(|(_, b)| b).collect::<Vec<_>>()) == vec![&2, &2]
+                { // two pair
                     2
-                } else if *max_card_count == 2 {
+                } else if max_card_count == 2 {  // one pair
                     1
-                } else {
+                } else { // high card
                     0
                 }
             };
 
             Hand {
-                cards: x[0].chars().map(|c| Card { card: c }).collect(),
+                cards: x[0].chars().collect(),
                 bid: x[1].parse::<i32>().unwrap(),
                 value: hand_value,
             }
         })
         .collect::<Vec<Hand>>();
 
+    hands.sort_by(|a, b| a.cmp(b, &card_values));
+
+    // dbg!(&hands);
     // order the hands by value
 
-    dbg!(hands);
-    0
+    // dbg!(hands);
+    hands.iter().enumerate().map(|(i, hand)| {
+        let rank = (i+1) as i32;
+        dbg!(&hand);
+        dbg!(&rank);
+        println!();
+        rank * hand.bid
+    }).sum()
 }
 
 #[cfg(test)]
