@@ -68,7 +68,6 @@ fn process(input: &str) -> usize {
         .trim()
         .lines()
         .map(|line| {
-            // dbg!(&line);
             let capt = re.captures(line).unwrap();
             (
                 capt[1].to_string(),
