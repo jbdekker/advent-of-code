@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 fn main() {
     let input = include_str!("input.txt");
@@ -13,11 +13,40 @@ enum Direction {
     RIGHT = 2,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq)]
 struct Node {
-    // name: String,
+    name: String,
     left: String,
     right: String,
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Node) -> bool {
+        self.name == other.name
+    }
+}
+
+fn gcd(a: usize, b: usize) -> usize {
+    // greatest common denominator
+    assert!(a > b, "a must be larger than b");
+
+    match b {
+        0 => a,
+        _ => gcd(b, a % b),
+    }
+}
+
+fn lcm(a: usize, b: usize) -> usize {
+    // least common multiple
+    (a * b) / gcd(a, b)
+}
+
+fn lcm_vec(x: Vec<usize>) -> usize {
+    // least common multiple over vector
+    x.into_iter().fold(1, |a, b| match a > b {
+        true => lcm(a, b),
+        false => lcm(b, a),
+    })
 }
 
 fn process(input: &str) -> usize {
@@ -35,16 +64,16 @@ fn process(input: &str) -> usize {
 
     let re = Regex::new(r"([A-Z0-9]+) = \(([A-Z0-9]+), ([A-Z0-9]+)\)").unwrap();
 
-    let nodes: BTreeMap<String, Node> = parts[1]
+    let node_map: HashMap<String, Node> = parts[1]
         .trim()
         .lines()
         .map(|line| {
             // dbg!(&line);
             let capt = re.captures(line).unwrap();
-
             (
                 capt[1].to_string(),
                 Node {
+                    name: capt[1].to_string(),
                     left: capt[2].to_string(),
                     right: capt[3].to_string(),
                 },
@@ -52,47 +81,39 @@ fn process(input: &str) -> usize {
         })
         .collect();
 
-    // dbg!(&instructions);
-    // dbg!(&nodes);
-
-    let mut cur_node_names: Vec<&String> = nodes
-        .keys()
-        .filter(|k| k.chars().last().unwrap() == 'A')
+    let mut nodes_todo: Vec<&Node> = node_map
+        .values()
+        .filter(|k| k.name.chars().last().unwrap() == 'A')
         .collect();
 
-    // dbg!(&cur_node_names);
+    let mut nodes_done: HashMap<&Node, usize> = HashMap::new();
 
-    let mut checked_nodes: BTreeMap<&String, usize> = BTreeMap::new();
     let mut i = 0;
-    while !cur_node_names
-        .iter()
-        .all(|x| x.chars().last().unwrap() == 'Z')
-    {
-        // println!("{cur_node_names:?}");
-        let cur_nodes: Vec<&Node> = cur_node_names
-            .into_iter()
-            .map(|name| nodes.get(name).unwrap())
-            .collect();
+    while !nodes_todo.is_empty() {
+        // Nodes ending on a 'Z' are done, store the number of steps it took
+        nodes_done.extend(nodes_todo.clone().into_iter().filter_map(|node| {
+            match node.name.chars().last().unwrap() == 'Z' {
+                true => Some((node, i)),
+                false => None,
+            }
+        }));
 
-        cur_node_names = cur_nodes
+        // take a step for the nodes that don't end on a Z
+        nodes_todo = nodes_todo
             .into_iter()
-            .map(|node| match instructions[i % instructions.len()] {
-                Direction::LEFT => &node.left,
-                Direction::RIGHT => &node.right,
+            .filter_map(|node| match node.name.chars().last().unwrap() {
+                'Z' => None,
+                _ => match instructions[i % instructions.len()] {
+                    Direction::LEFT => Some(node_map.get(&node.left).unwrap()),
+                    Direction::RIGHT => Some(node_map.get(&node.right).unwrap()),
+                },
             })
             .collect();
-
-        checked_nodes.extend(
-            cur_node_names
-                .iter()
-                .filter(|name| name.chars().last().unwrap() == 'Z')
-                .map(|name| (*name, i)),
-        );
 
         i += 1;
     }
 
-    i
+    lcm_vec(nodes_done.into_values().collect())
 }
 
 #[cfg(test)]

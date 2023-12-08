@@ -39,7 +39,6 @@ fn process(input: &str) -> usize {
         .trim()
         .lines()
         .map(|line| {
-            dbg!(&line);
             let capt = re.captures(line).unwrap();
 
             (
@@ -51,9 +50,6 @@ fn process(input: &str) -> usize {
             )
         })
         .collect();
-
-    dbg!(&instructions);
-    dbg!(&nodes);
 
     let mut cur_node_name: &String = &"AAA".to_string();
     let end_node_name: &String = &"ZZZ".to_string();
