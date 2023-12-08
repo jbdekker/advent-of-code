@@ -39,7 +39,7 @@ fn process(input: &str) -> usize {
         .trim()
         .lines()
         .map(|line| {
-            dbg!(&line);
+            // dbg!(&line);
             let capt = re.captures(line).unwrap();
 
             (
@@ -52,20 +52,42 @@ fn process(input: &str) -> usize {
         })
         .collect();
 
-    dbg!(&instructions);
-    dbg!(&nodes);
+    // dbg!(&instructions);
+    // dbg!(&nodes);
 
-    let mut cur_node_name: &String = &"AAA".to_string();
-    let end_node_name: &String = &"ZZZ".to_string();
+    let mut cur_node_names: Vec<&String> = nodes
+        .keys()
+        .filter(|k| k.chars().last().unwrap() == 'A')
+        .collect();
 
+    // dbg!(&cur_node_names);
+
+    let mut checked_nodes: BTreeMap<&String, usize> = BTreeMap::new();
     let mut i = 0;
-    while cur_node_name != end_node_name {
-        let cur_node = nodes.get(cur_node_name).unwrap();
+    while !cur_node_names
+        .iter()
+        .all(|x| x.chars().last().unwrap() == 'Z')
+    {
+        // println!("{cur_node_names:?}");
+        let cur_nodes: Vec<&Node> = cur_node_names
+            .into_iter()
+            .map(|name| nodes.get(name).unwrap())
+            .collect();
 
-        cur_node_name = match instructions[i % instructions.len()] {
-            Direction::LEFT => &cur_node.left,
-            Direction::RIGHT => &cur_node.right,
-        };
+        cur_node_names = cur_nodes
+            .into_iter()
+            .map(|node| match instructions[i % instructions.len()] {
+                Direction::LEFT => &node.left,
+                Direction::RIGHT => &node.right,
+            })
+            .collect();
+
+        checked_nodes.extend(
+            cur_node_names
+                .iter()
+                .filter(|name| name.chars().last().unwrap() == 'Z')
+                .map(|name| (*name, i)),
+        );
 
         i += 1;
     }
@@ -91,6 +113,6 @@ mod tests {
 22Z = (22B, 22B)
 XXX = (XXX, XXX)",
         );
-        assert_eq!(result, 2)
+        assert_eq!(result, 6)
     }
 }
