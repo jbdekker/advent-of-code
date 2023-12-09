@@ -56,9 +56,9 @@ fn process(input: &str) -> i32 {
 
         let extrapolated_value: i32 = stack
             .iter()
-            .map(|list| list.last().copied().unwrap())
+            .map(|list| list.into_iter().next().copied().unwrap())
             .rev()
-            .fold(0 as i32, |acc, n| acc + n.right);
+            .fold(0 as i32, |acc, n| n.left - acc);
 
         extrapolated_values.push(extrapolated_value);
     }
@@ -77,6 +77,6 @@ mod tests {
 1 3 6 10 15 21
 10 13 16 21 30 45",
         );
-        assert_eq!(result, 114)
+        assert_eq!(result, 2)
     }
 }
