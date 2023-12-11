@@ -7,7 +7,7 @@ fn main() {
     dbg!(output);
 }
 
-fn transpose_space(space: Vec<Vec<char>>) -> Vec<Vec<char>> {
+fn transpose(space: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     let rows = space[0].len();
     let cols = space.len();
 
@@ -16,38 +16,40 @@ fn transpose_space(space: Vec<Vec<char>>) -> Vec<Vec<char>> {
         .collect()
 }
 
-fn num_empty(space: &Vec<Vec<char>>, a: usize, b: usize, transpose: bool) -> usize {
-    let space = match transpose {
-        true => transpose_space(space.clone()),
-        false => space.clone(),
-    };
+fn empty_rows(space: &Vec<Vec<char>>) -> Vec<usize> {
+    space
+        .iter()
+        .enumerate()
+        .filter_map(|(i, x)| match x.iter().collect::<BTreeSet<&char>>().len() {
+            1 => Some(i),
+            _ => None,
+        })
+        .collect::<Vec<usize>>()
+}
 
-    let (a, b) = match a > b {
+fn get_expansions(space: &Vec<Vec<char>>) -> (Vec<usize>, Vec<usize>) {
+    (empty_rows(&space), empty_rows(&transpose(space)))
+}
+
+fn count_between(v: &Vec<usize>, a: usize, b: usize) -> usize {
+    let range = match a > b {
         true => (b, a),
         false => (a, b),
     };
 
-    // expand space-rows
-    space[a..b]
-        .iter()
-        .filter_map(|x| match x.iter().collect::<BTreeSet<&char>>().len() {
-            1 => Some(1000000 - 1),
-            _ => None,
-        })
-        .sum()
+    let count = v.iter().filter(|x| *x > &range.0 && *x < &range.1).count();
+
+    match count {
+        0 => 0,
+        _ => count * (1000_000 - 1),
+    }
 }
 
 fn process(input: &str) -> i64 {
-    // generate space
     let space = input
         .lines()
         .map(|a| a.chars().collect::<Vec<char>>())
         .collect::<Vec<Vec<char>>>();
-
-    for line in space.iter() {
-        println!("{}", line.into_iter().collect::<String>());
-    }
-    // dbg!(&space);
 
     let galaxies = space
         .iter()
@@ -64,14 +66,16 @@ fn process(input: &str) -> i64 {
         .flatten()
         .collect::<Vec<(i64, i64)>>();
 
+    let (rows, cols) = get_expansions(&space);
+
     let sum_of_distances = galaxies
         .iter()
         .combinations(2)
         .map(|v| {
             i64::abs(v[0].0 - v[1].0)
-                + num_empty(&space, v[0].0 as usize, v[1].0 as usize, true) as i64
+                + count_between(&cols, v[0].0 as usize, v[1].0 as usize) as i64
                 + i64::abs(v[0].1 - v[1].1)
-                + num_empty(&space, v[0].1 as usize, v[1].1 as usize, false) as i64
+                + count_between(&rows, v[0].1 as usize, v[1].1 as usize) as i64
         })
         .sum::<i64>();
 
@@ -96,6 +100,6 @@ mod tests {
 .......#..
 #...#.....",
         );
-        assert_eq!(result, 374)
+        assert_eq!(result, 1030)
     }
 }
