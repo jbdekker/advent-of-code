@@ -31,13 +31,13 @@ fn num_empty(space: &Vec<Vec<char>>, a: usize, b: usize, transpose: bool) -> usi
     space[a..b]
         .iter()
         .filter_map(|x| match x.iter().collect::<BTreeSet<&char>>().len() {
-            1 => Some(1),
+            1 => Some(1000000 - 1),
             _ => None,
         })
-        .count()
+        .sum()
 }
 
-fn process(input: &str) -> i32 {
+fn process(input: &str) -> i64 {
     // generate space
     let space = input
         .lines()
@@ -57,23 +57,23 @@ fn process(input: &str) -> i32 {
                 .enumerate()
                 .filter_map(|(x, b)| match b {
                     '.' => None,
-                    _ => Some((x as i32, y as i32)),
+                    _ => Some((x as i64, y as i64)),
                 })
-                .collect::<Vec<(i32, i32)>>()
+                .collect::<Vec<(i64, i64)>>()
         })
         .flatten()
-        .collect::<Vec<(i32, i32)>>();
+        .collect::<Vec<(i64, i64)>>();
 
     let sum_of_distances = galaxies
         .iter()
         .combinations(2)
         .map(|v| {
-            i32::abs(v[0].0 - v[1].0)
-                + num_empty(&space, v[0].0 as usize, v[1].0 as usize, true) as i32
-                + i32::abs(v[0].1 - v[1].1)
-                + num_empty(&space, v[0].1 as usize, v[1].1 as usize, false) as i32
+            i64::abs(v[0].0 - v[1].0)
+                + num_empty(&space, v[0].0 as usize, v[1].0 as usize, true) as i64
+                + i64::abs(v[0].1 - v[1].1)
+                + num_empty(&space, v[0].1 as usize, v[1].1 as usize, false) as i64
         })
-        .sum::<i32>();
+        .sum::<i64>();
 
     sum_of_distances
 }
