@@ -86,7 +86,6 @@ impl PipeMap {
                     0
                 } else {
                     self.get_pipe(&reference.do_move(*direction)).side = side.clone();
-                    println!("Marning {:?}", &reference.do_move(*direction));
                     1
                 }
             })
@@ -257,7 +256,7 @@ fn process(input: &str) -> usize {
     let mut position = start.clone();
     let mut step_nr: usize = 0;
     let mut new_move: Direction;
-    let step_nr = loop {
+    let _ = loop {
         (new_move, step_nr) = get_next_step(&mut map, &position, step_nr);
 
         position = position.do_move(new_move);
@@ -354,20 +353,9 @@ fn process(input: &str) -> usize {
         }
     };
 
-    dbg!(&map.grid);
-
     cleanup(&mut map);
-
-    dbg!(&map.grid);
-
     expand(&mut map);
-
-    dbg!(&map.grid);
-
     let (left, right) = sum_sides(&mut map);
-
-    println!("Left: {}, Right: {}", left, right);
-
     let first_border_point = map.grid[0].iter().filter(|x| !x.visited).next().unwrap();
 
     match first_border_point.side {
@@ -375,8 +363,6 @@ fn process(input: &str) -> usize {
         Side::Right => left,
         Side::Unknown => panic!("Should not happen!"),
     }
-
-    // count_enclosed(&map)
 }
 
 fn sum_sides(map: &mut PipeMap) -> (usize, usize) {
@@ -449,40 +435,6 @@ fn get_unknown_side(map: &PipeMap) -> Vec<Point> {
         })
         .flatten()
         .collect()
-}
-
-fn count_enclosed(map: &PipeMap) -> usize {
-    let grid = &map.grid;
-
-    let unknown_size = get_unknown_side(&map);
-    while unknown_size.len() > 0 {}
-
-    let mut within: bool = false;
-    let mut prev_visited: bool = false;
-    grid.iter()
-        .enumerate()
-        .map(|(y, row)| {
-            row.iter()
-                .enumerate()
-                .filter_map(|(x, pipe)| {
-                    if pipe.visited && pipe.visited != prev_visited {
-                        within = !within;
-                        return None;
-                    }
-
-                    prev_visited = pipe.visited;
-
-                    match within {
-                        true => {
-                            println!("({x}, {y})");
-                            return Some(1);
-                        }
-                        false => return None,
-                    }
-                })
-                .sum::<usize>()
-        })
-        .sum::<usize>()
 }
 
 #[cfg(test)]
