@@ -5,13 +5,6 @@ fn main() {
 }
 
 fn number_of_options(record: &str, nums: &Vec<usize>) -> usize {
-    println!("New interation!");
-
-    // if dbg!(record.len() + 1) < dbg!(nums.iter().sum::<usize>() + nums.len()) {
-    //     println!("record is too short");
-    //     return 0;
-    // }
-
     if record.len() == 0 {
         match nums.is_empty() {
             true => return dbg!(1),
@@ -35,7 +28,6 @@ fn number_of_options(record: &str, nums: &Vec<usize>) -> usize {
     }
 
     if ['#', '?'].into_iter().any(|s| s == next_char) {
-        // must be enough springs left
         if record.len() >= nums[0] && !record[..nums[0]].contains('.') {
             if record.len() == nums[0] {
                 println!("record: {}, nums: {:?}", record, nums);
@@ -64,17 +56,11 @@ fn process(input: &str) -> usize {
                 .map(|x| x.parse::<usize>().unwrap())
                 .collect();
 
-            let options = number_of_options(&record, &numbers);
-
-            // dbg!(&record);
-            // dbg!(&numbers);
-
-            dbg!(options)
+            number_of_options(&record, &numbers)
         })
         .sum();
 
     return result;
-    // todo!();
 }
 
 #[cfg(test)]
