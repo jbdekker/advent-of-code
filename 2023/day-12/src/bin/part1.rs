@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 fn main() {
     let input = include_str!("input.txt");
     let output = process(input);
@@ -7,15 +9,15 @@ fn main() {
 fn number_of_options(record: &str, nums: &Vec<usize>) -> usize {
     if record.len() == 0 {
         match nums.is_empty() {
-            true => return dbg!(1),
-            false => return dbg!(0),
-        };
+            true => return 1,
+            false => return 0,
+        }
     }
 
     if nums.is_empty() {
         match record.contains('#') {
-            true => return dbg!(0),
-            false => return dbg!(1),
+            true => return 0,
+            false => return 1,
         };
     }
 
@@ -23,14 +25,12 @@ fn number_of_options(record: &str, nums: &Vec<usize>) -> usize {
 
     let next_char = record.chars().next().unwrap();
     if ['.', '?'].into_iter().any(|s| s == next_char) {
-        println!("Next char: {}", next_char);
         result += number_of_options(&record[1..], &nums)
     }
 
     if ['#', '?'].into_iter().any(|s| s == next_char) {
         if record.len() >= nums[0] && !record[..nums[0]].contains('.') {
             if record.len() == nums[0] {
-                println!("record: {}, nums: {:?}", record, nums);
                 result += number_of_options(&record[nums[0]..], &nums[1..].to_vec());
             } else if record.chars().nth(nums[0]).unwrap() != '#' {
                 result += number_of_options(&record[(nums[0] + 1)..], &nums[1..].to_vec());
@@ -44,25 +44,21 @@ fn number_of_options(record: &str, nums: &Vec<usize>) -> usize {
 }
 
 fn process(input: &str) -> usize {
-    let result: usize = input
+    input
         .lines()
         .into_iter()
         .map(|line| {
-            let parts = line.split_whitespace().collect::<Vec<_>>();
+            let (record, numbers) = line.split_whitespace().collect_tuple().unwrap();
 
-            let record = parts[0];
-            let numbers: Vec<_> = parts[1]
+            let numbers: Vec<_> = numbers
                 .split(',')
                 .map(|x| x.parse::<usize>().unwrap())
                 .collect();
 
             number_of_options(&record, &numbers)
         })
-        .sum();
-
-    return result;
+        .sum()
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;

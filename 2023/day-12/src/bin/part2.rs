@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use memoize::memoize;
 
 fn main() {
@@ -58,25 +59,22 @@ fn number_of_options(record: String, nums: Vec<usize>) -> usize {
 }
 
 fn process(input: &str) -> usize {
-    let result = input
+    input
         .lines()
         .into_iter()
         .map(|line| {
-            let parts = line.split_whitespace().collect::<Vec<_>>();
+            let (record, numbers) = line.split_whitespace().collect_tuple().unwrap();
 
-            let record = parts[0];
-            let numbers: Vec<_> = parts[1]
+            let numbers: Vec<_> = numbers
                 .split(',')
                 .map(|x| x.parse::<usize>().unwrap())
                 .collect();
-            let record = Vec::from([record; 5]).join("?");
+            let record = vec![record; 5].join("?");
             let numbers = vec![numbers; 5].into_iter().flatten().collect();
 
             number_of_options(record.to_string(), numbers)
         })
-        .sum();
-
-    return result;
+        .sum()
 }
 
 #[cfg(test)]
