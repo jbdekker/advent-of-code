@@ -35,7 +35,7 @@ fn number_of_options(record: &str, nums: &Vec<usize>) -> usize {
             } else if record.chars().nth(nums[0]).unwrap() != '#' {
                 result += number_of_options(&record[(nums[0] + 1)..], &nums[1..].to_vec());
             } else {
-                result += 0;
+                ()
             }
         }
     }

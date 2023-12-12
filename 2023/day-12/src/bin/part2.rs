@@ -50,7 +50,7 @@ fn number_of_options(record: String, nums: Vec<usize>) -> usize {
                 result +=
                     number_of_options(record[(nums[0] + 1)..].to_string(), nums[1..].to_vec());
             } else {
-                result += 0;
+                ()
             }
         }
     }
