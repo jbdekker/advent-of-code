@@ -5,8 +5,7 @@ fn main() {
 }
 
 fn number_of_options(record: &str, nums: &Vec<usize>) -> usize {
-    dbg!(&record);
-    dbg!(&nums);
+    println!("New interation!");
 
     // if dbg!(record.len() + 1) < dbg!(nums.iter().sum::<usize>() + nums.len()) {
     //     println!("record is too short");
@@ -41,8 +40,10 @@ fn number_of_options(record: &str, nums: &Vec<usize>) -> usize {
             if record.len() == nums[0] {
                 println!("record: {}, nums: {:?}", record, nums);
                 result += number_of_options(&record[nums[0]..], &nums[1..].to_vec());
-            } else {
+            } else if record.chars().nth(nums[0]).unwrap() != '#' {
                 result += number_of_options(&record[(nums[0] + 1)..], &nums[1..].to_vec());
+            } else {
+                result += 0;
             }
         }
     }
@@ -82,7 +83,15 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = process("?###???????? 3,2,1");
-        assert_eq!(result, 10)
+        let result = process(
+            "???.### 1,1,3
+        .??..??...?##. 1,1,3
+        ?#?#?#?#?#?#?#? 1,3,1,6
+        ????.#...#... 4,1,1
+        ????.######..#####. 1,6,5
+        ?###???????? 3,2,1",
+        );
+
+        assert_eq!(result, 21)
     }
 }
