@@ -1,139 +1,81 @@
-use itertools::Itertools;
-use itertools::EitherOrBoth::Both;
-use std::collections::HashSet;
-
 fn main() {
     let input = include_str!("input.txt");
     let output = process(input);
     dbg!(output);
 }
 
-fn find_line_reflections(line: &str, idx: usize, seen: &mut Vec<usize>) -> () {
-    if idx > line.len() - 1 {
-        return; // done
-    }
-
-    let left = line[..idx].chars().rev();
-    let right = &line[idx..];
-    let matched: Vec<bool> = left.zip_longest(right.chars()).filter_map(|r| {
-        match r {
-            Both(l, r) => match l == r {true => Some(true), false => Some(false),},
-            _ => None,
-        }
-    }).collect();
-
-    if matched.iter().all(|x| *x) && matched.len() > 0 {
-        seen.push(idx);
-    }
-
-    return find_line_reflections(line, idx+1, seen);
+fn find_folds(block: &Vec<Vec<char>>) -> Option<usize> {
+    (0..block[0].len()).find_map(|i| try_fold(block, 0, i + 1, 0))
 }
 
-fn find_block_reflection(block: &Vec<String>, find_horizontal: bool) -> Option<Vec<usize>> {
-    let transposed_block = transpose(block);
-    let block = match find_horizontal {true => &transposed_block, false => block};
+fn try_fold(
+    block: &Vec<Vec<char>>,
+    line_idx: usize,
+    col_idx: usize,
+    missing: usize,
+) -> Option<usize> {
+    let missing = missing
+        + block[line_idx][..col_idx]
+            .iter()
+            .rev()
+            .zip(block[line_idx][col_idx..].iter())
+            .filter_map(|(a, b)| match a != b {
+                true => Some(true),
+                false => None,
+            })
+            .collect::<Vec<_>>()
+            .len();
 
-    let mut line_seen: Vec<Vec<usize>> = Vec::new();
-    let _reflections: Vec<_> = block.iter().map(|line| {
-        let mut seen: Vec<usize> = Vec::new();
-        find_line_reflections(line, 1, &mut seen);
-        line_seen.push(seen);
-    }).collect();
+    if missing > 1 {
+        return None;
+    }
 
-    let sets: Vec<HashSet<_>> = line_seen.iter()
-        .map(|list| list.iter().cloned().collect())
-        .collect();
+    match line_idx + 1 == block.len() {
+        true => match missing == 1 {
+            true => Some(col_idx),
+            false => None,
+        },
+        false => try_fold(block, line_idx + 1, col_idx, missing),
+    }
+}
 
-    let mut nums = Vec::new();
-    for &num in &sets[0] {
-        if sets.iter().all(|s| s.contains(&num)) {
-            match find_horizontal {
-                true => nums.push(100 * num),
-                false => nums.push(num),
+fn find(block: &Vec<Vec<char>>) -> usize {
+    match find_folds(block) {
+        Some(v) => v,
+        None => {
+            let block_transposed = (0..block[0].len())
+                .map(|col| (0..block.len()).map(|row| block[row][col]).collect())
+                .collect();
+
+            match find_folds(&block_transposed) {
+                Some(v) => 100 * v,
+                None => panic!("No fold found!"),
             }
         }
     }
-
-
-    match nums.len() {
-        0 => return None,
-        _ => return Some(nums),
-    }
-
-}
-
-fn transpose(input: &Vec<String>) -> Vec<String> {
-    (0..input[0].len()).map(|i| {
-        input.iter()
-            .map(|s| s.chars().nth(i).unwrap()) // Replace `unwrap_or(' ')` with another character if needed
-            .collect()
-    }).collect()
-}
-
-fn flip_char(block: &Vec<String>, row: usize, col: usize) -> Vec<String> {
-    let mut block = block.clone();
-    let c = block[row].chars().nth(col).unwrap();
-
-    dbg!(&row);
-    dbg!(&col);
-    match c {
-        '#' => block[row].replace_range(col..=col, "."),
-        '.' => block[row].replace_range(col..=col, "#"),
-        _ => panic!("Should be unreachable, got char {c}"),
-    }
-
-    block
 }
 
 fn process(input: &str) -> usize {
     let blocks: Vec<_> = input.split("\n\n").collect();
 
-    let result: usize = blocks.iter().enumerate().map(|(idx, block)| {
-        let lines: Vec<String> = block.lines().filter_map(|line| {
-            let line = line.trim();
-            
-            match line {
-                "" => None,
-                _ => Some(line.to_string())
-            }
-        }).collect();
+    let result: usize = blocks
+        .iter()
+        .map(|block| {
+            let block: Vec<Vec<char>> = block
+                .lines()
+                .filter_map(|line| {
+                    let line = line.trim();
 
-        // if idx > 10 {
-        //     0
-        // } else {
-
-        let res = vec![true, false].into_iter().filter_map(|v| find_block_reflection(&lines,v)).flatten().collect::<Vec<_>>();
-        if res.len() > 1 {
-            panic!("{res:?}");
-        }
-        let mut ans = 0;
-        'outer: for row in 0..lines.len() {
-            for col in 0..lines[0].len() {
-                let flipped_lines = flip_char(&lines, row, col);
-                
-                let mut options = vec![true, false].into_iter().filter_map(|v| find_block_reflection(&flipped_lines,v)).flatten().collect::<Vec<_>>();
-
-                dbg!(&options);
-                dbg!(&res);
-                
-                options.retain(|&x| x != res[0]);
-                if options.len() > 0 {
-                    ans = options[0];
-
-                    if options.len() > 1 {
-                        panic!("{options:?}");
+                    match line {
+                        "" => None,
+                        _ => Some(line.chars().collect()),
                     }
-                    dbg!(&flipped_lines);
-                    dbg!(&options);
+                })
+                .collect();
 
-                    break 'outer;
-                } 
-
-            }
-        }
-        ans
-        
-    }).sum();
+            find(&block)
+        })
+        .sum();
 
     result
 }
@@ -144,7 +86,8 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = process("#.##..##.
+        let result = process(
+            "#.##..##.
 ..#.##.#.
 ##......#
 ##......#
@@ -158,11 +101,8 @@ mod tests {
 #####.##.
 #####.##.
 ..##..###
-#....#..#");
+#....#..#",
+        );
         assert_eq!(result, 400)
     }
 }
-
-
-// to-low: 32551
-// to-low: 34672
