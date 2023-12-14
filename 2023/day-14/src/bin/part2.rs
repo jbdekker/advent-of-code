@@ -1,9 +1,6 @@
 use memoize::memoize;
-use std::collections::{HashMap, BTreeMap};
+use std::collections::BTreeMap;
 use std::io::{stdout, Write};
-// use std::collections::HashMap;
-// use std::io::prelude::*;
-use std::fs::File;
 
 fn main() {
     let input = include_str!("input.txt");
@@ -126,12 +123,3 @@ mod tests {
         assert_eq!(result, 64)
     }
 }
-
-// 102635 => to low
-// 102491 => cycle 23 ...even lower
-// 102907 => to low 1e9 mod 29 - 1
-// 106666
-// 112544 => incorrect
-// 112516 => incorrect
-// 112452 => n-1
-// 112433
