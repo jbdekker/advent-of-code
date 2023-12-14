@@ -1,6 +1,5 @@
 use memoize::memoize;
 use std::collections::BTreeMap;
-use std::io::{stdout, Write};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -16,10 +15,9 @@ struct Point {
 
 #[memoize]
 fn spin(grid: Vec<Vec<char>>) -> Vec<Vec<char>> {
-    let grid = (0..grid[0].len())
+    (0..grid[0].len())
                 .map(|x| (0..grid.len()).rev().map(|y| grid[y][x]).collect())
-                .collect::<Vec<Vec<char>>>();
-    grid
+                .collect::<Vec<Vec<char>>>()
 }
 
 fn roll_up(grid: &mut Vec<Vec<char>>, point: Point) -> usize {
@@ -36,7 +34,7 @@ fn roll_up(grid: &mut Vec<Vec<char>>, point: Point) -> usize {
     }
 }
 
-fn load(grid: &Vec<Vec<char>>) -> usize {
+fn calculate_load(grid: &Vec<Vec<char>>) -> usize {
     (0..grid.len()).map(|y| (0..grid[0].len()).map(|x| {
         match grid[y][x] {
             'O' => grid.len() - y,
@@ -45,7 +43,7 @@ fn load(grid: &Vec<Vec<char>>) -> usize {
     }).sum::<usize>()).sum()
 }
 
-fn detect_cycle(list: &Vec<usize>, max_length: usize) -> Option<usize> {
+fn find_cycle(list: &Vec<usize>, max_length: usize) -> Option<usize> {
     if list.len() < max_length * 2 {
         return None;
     }
@@ -62,13 +60,9 @@ fn detect_cycle(list: &Vec<usize>, max_length: usize) -> Option<usize> {
 }
 
 fn process(input: &str) -> usize {
-    let mut stdout = stdout();
     let mut grid: Vec<Vec<char>> = input.lines().map(|line| line.trim().chars().collect::<Vec<_>>()).collect();
-    // let mut results: HashMap<usize, Vec<usize>> = HashMap::new();
     let mut results: BTreeMap<usize, usize> = BTreeMap::new();
     let mut _res = 0;
-    let mut load_north: usize = 0;
-    // let spin_cycles = 1e9 as usize;
     let spin_cycles = 1e9 as usize;
     for c in 0..spin_cycles {
         for _ in 0..4 {
@@ -80,20 +74,15 @@ fn process(input: &str) -> usize {
             grid = spin(grid);
         }
 
-        load_north = load(&grid);
-        results.insert(c, load_north);
+        results.insert(c, calculate_load(&grid));
 
         if c % 1000 == 0 {
-            stdout.flush().unwrap();
-            print!("\rSpin cycle #{}, res={}", c, load_north);
-
-            let detected_cycle = detect_cycle(&results.values().cloned().collect(), 100);
+            let detected_cycle = find_cycle(&results.values().cloned().collect(), 100);
 
             match detected_cycle {
                 Some(n) => {
                     results.retain(|&k,_| k > c - n);
                     let results: BTreeMap<usize, usize> = results.iter().map(|(&k, &v)| (k % n, v)).collect();
-                    dbg!(&results);
                     let ans = results.get(&((spin_cycles - 1) % n)).unwrap();
                     return *ans;
                 }
