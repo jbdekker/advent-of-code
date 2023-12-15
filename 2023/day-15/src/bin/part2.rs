@@ -39,16 +39,17 @@ fn get_label(s: &Vec<char>, label: &mut Vec<char>) -> (usize, String, Vec<char>)
 }
 
 fn power(boxes: &BTreeMap<usize, Vec<Lens>>) -> usize {
-    let mut total: usize = 0;
-    for (b, lenses) in boxes.into_iter() {
-        total += (1 + b)
-            * lenses
-                .iter()
-                .enumerate()
-                .map(|(i, lens)| (i + 1) * lens.focal_length)
-                .sum::<usize>();
-    }
-    total
+    boxes
+        .into_iter()
+        .map(|(b, lenses)| {
+            (1 + b)
+                * lenses
+                    .iter()
+                    .enumerate()
+                    .map(|(i, lens)| (i + 1) * lens.focal_length)
+                    .sum::<usize>()
+        })
+        .sum()
 }
 
 fn do_step(boxes: &mut BTreeMap<usize, Vec<Lens>>, s: &mut Vec<char>) -> () {
