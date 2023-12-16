@@ -7,6 +7,7 @@ fn main() {
     dbg!(output);
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 enum Kind {
     Empty,
     LRMirror,
@@ -28,16 +29,18 @@ impl Kind {
     }
 }
 
+#[derive(Eq, PartialEq, Hash)]
 struct Grid {
     squares: Vec<Vec<Square>>,
 }
 
+#[derive(Eq, PartialEq, Hash)]
 struct Square {
     kind: Kind,
     energized: bool,
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone, Hash)]
 enum Direction {
     Left,
     Right,
@@ -64,98 +67,116 @@ impl Grid {
     fn get(&mut self, point: &Point) -> &mut Square {
         &mut self.squares[point.y][point.x]
     }
-
-    fn step(&self, direction: &Direction, point: &Point) -> Option<Point> {
-        match direction {
-            Direction::Left => {
-                if point.x == 0 {
-                    None
-                } else {
-                    Some(Point {
-                        x: point.x - 1,
-                        y: point.y,
-                    })
-                }
-            }
-            Direction::Right => {
-                if point.x == self.squares[0].len() - 1 {
-                    None
-                } else {
-                    Some(Point {
-                        x: point.x + 1,
-                        y: point.y,
-                    })
-                }
-            }
-            Direction::Up => {
-                if point.y == 0 {
-                    None
-                } else {
-                    Some(Point {
-                        x: point.x,
-                        y: point.y - 1,
-                    })
-                }
-            }
-            Direction::Down => {
-                if point.y == self.squares.len() - 1 {
-                    None
-                } else {
-                    Some(Point {
-                        x: point.x,
-                        y: point.y + 1,
-                    })
-                }
-            }
-        }
-    }
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 struct Point {
     x: usize,
     y: usize,
 }
 
+fn maybe_step(span: (usize, usize), direction: &Direction, point: &Point) -> Option<Point> {
+    match direction {
+        Direction::Left => {
+            if point.x == 0 {
+                None
+            } else {
+                Some(Point {
+                    x: point.x - 1,
+                    y: point.y,
+                })
+            }
+        }
+        Direction::Right => {
+            if point.x == span.0 {
+                None
+            } else {
+                Some(Point {
+                    x: point.x + 1,
+                    y: point.y,
+                })
+            }
+        }
+        Direction::Up => {
+            if point.y == 0 {
+                None
+            } else {
+                Some(Point {
+                    x: point.x,
+                    y: point.y - 1,
+                })
+            }
+        }
+        Direction::Down => {
+            if point.y == span.1 {
+                None
+            } else {
+                Some(Point {
+                    x: point.x,
+                    y: point.y + 1,
+                })
+            }
+        }
+    }
+}
+
 #[memoize]
 fn do_step(
-    grid: &mut Grid,
-    point: &Point,
+    kind: Kind,
+    span: (usize, usize),
+    point: Point,
     direction: Direction,
 ) -> Vec<(Option<Point>, Direction)> {
-    grid.get(&point).energized = true;
-
     let mut res = Vec::new();
 
-    match grid.get(&point).kind {
-        Kind::Empty => res.push((grid.step(&direction, &point), direction)),
+    match kind {
+        Kind::Empty => res.push((maybe_step(span, &direction, &point), direction)),
         Kind::HSplitter => match direction {
             Direction::Left | Direction::Right => {
-                res.push((grid.step(&direction, &point), direction))
+                res.push((maybe_step(span, &direction, &point), direction))
             }
             Direction::Up | Direction::Down => {
-                res.push((grid.step(&Direction::Left, &point), Direction::Left));
-                res.push((grid.step(&Direction::Right, &point), Direction::Right));
+                res.push((maybe_step(span, &Direction::Left, &point), Direction::Left));
+                res.push((
+                    maybe_step(span, &Direction::Right, &point),
+                    Direction::Right,
+                ));
             }
         },
         Kind::VSplitter => match direction {
-            Direction::Up | Direction::Down => res.push((grid.step(&direction, &point), direction)),
+            Direction::Up | Direction::Down => {
+                res.push((maybe_step(span, &direction, &point), direction))
+            }
             Direction::Left | Direction::Right => {
-                res.push((grid.step(&Direction::Up, &point), Direction::Up));
-                res.push((grid.step(&Direction::Down, &point), Direction::Down));
+                res.push((maybe_step(span, &Direction::Up, &point), Direction::Up));
+                res.push((maybe_step(span, &Direction::Down, &point), Direction::Down));
             }
         },
         Kind::LRMirror => match direction {
-            Direction::Right => res.push((grid.step(&Direction::Up, &point), Direction::Up)),
-            Direction::Left => res.push((grid.step(&Direction::Down, &point), Direction::Down)),
-            Direction::Down => res.push((grid.step(&Direction::Left, &point), Direction::Left)),
-            Direction::Up => res.push((grid.step(&Direction::Right, &point), Direction::Right)),
+            Direction::Right => res.push((maybe_step(span, &Direction::Up, &point), Direction::Up)),
+            Direction::Left => {
+                res.push((maybe_step(span, &Direction::Down, &point), Direction::Down))
+            }
+            Direction::Down => {
+                res.push((maybe_step(span, &Direction::Left, &point), Direction::Left))
+            }
+            Direction::Up => res.push((
+                maybe_step(span, &Direction::Right, &point),
+                Direction::Right,
+            )),
         },
         Kind::RLMirror => match direction {
-            Direction::Left => res.push((grid.step(&Direction::Up, &point), Direction::Up)),
-            Direction::Right => res.push((grid.step(&Direction::Down, &point), Direction::Down)),
-            Direction::Up => res.push((grid.step(&Direction::Left, &point), Direction::Left)),
-            Direction::Down => res.push((grid.step(&Direction::Right, &point), Direction::Right)),
+            Direction::Left => res.push((maybe_step(span, &Direction::Up, &point), Direction::Up)),
+            Direction::Right => {
+                res.push((maybe_step(span, &Direction::Down, &point), Direction::Down))
+            }
+            Direction::Up => {
+                res.push((maybe_step(span, &Direction::Left, &point), Direction::Left))
+            }
+            Direction::Down => res.push((
+                maybe_step(span, &Direction::Right, &point),
+                Direction::Right,
+            )),
         },
     }
     res
@@ -163,6 +184,8 @@ fn do_step(
 
 fn run(grid: &mut Grid, starting_point: Point, starting_direction: Direction) -> usize {
     grid.reset();
+
+    let span = (grid.squares[0].len() - 1, grid.squares.len() - 1);
 
     let mut queue: VecDeque<(Option<Point>, Direction)> = VecDeque::new();
     let mut seen: Vec<(Point, Direction)> = Vec::new();
@@ -174,7 +197,8 @@ fn run(grid: &mut Grid, starting_point: Point, starting_direction: Direction) ->
         match point {
             Some(p) => {
                 if !seen.contains(&(p, direction)) {
-                    for opt in do_step(grid, &p, direction).iter() {
+                    grid.get(&p).energized = true;
+                    for opt in do_step(grid.get(&p).kind, span, p, direction).iter() {
                         queue.push_back(opt.clone());
                     }
                     seen.push((p, direction))
@@ -236,3 +260,6 @@ mod tests {
         assert_eq!(result, 51)
     }
 }
+
+// Memoize: 7.599 sec
+// No-memoize: 7.348 sec
