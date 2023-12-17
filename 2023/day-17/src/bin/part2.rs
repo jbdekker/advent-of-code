@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, VecDeque};
-
+use std::collections::{BinaryHeap, HashMap};
 fn main() {
     let input = include_str!("input.txt");
     let output = process(input);
@@ -8,15 +8,20 @@ fn main() {
 
 fn step(
     grid: &Vec<Vec<usize>>,
-    seen: &mut BTreeMap<((usize, usize), (isize, isize), usize), usize>,
+    seen: &mut HashMap<((usize, usize), (isize, isize), usize), usize>,
     position: (usize, usize),
     last_step: (isize, isize),
     n_last_direction: usize,
     heatloss: usize,
+    min_heatloss: &mut usize,
 ) -> Option<Vec<((usize, usize), (isize, isize), usize, usize)>> {
     let mut heatloss = heatloss;
     if position != (0, 0) {
         heatloss += grid[position.1][position.0];
+    }
+
+    if heatloss >= *min_heatloss {
+        return None;
     }
 
     let key = (position, last_step, n_last_direction);
@@ -31,6 +36,9 @@ fn step(
     }
 
     if position == (grid[0].len() - 1, grid.len() - 1) {
+        if heatloss < *min_heatloss {
+            *min_heatloss = heatloss;
+        }
         return None;
     }
 
@@ -89,14 +97,25 @@ fn process(input: &str) -> usize {
         })
         .collect();
 
-    let mut seen: BTreeMap<((usize, usize), (isize, isize), usize), usize> = BTreeMap::new();
+    let mut seen: HashMap<((usize, usize), (isize, isize), usize), usize> =
+        HashMap::with_capacity(1e6 as usize);
     let mut queue: VecDeque<((usize, usize), (isize, isize), usize, usize)> = VecDeque::new();
+    //let mut queue: BinaryHeap<((usize, usize), (isize, isize), usize, usize)> = BinaryHeap::new();
+    let mut min_heatloss: usize = 1e6 as usize;
 
-    queue.push_back(((0, 0), (0, 0), 0, 0));
+    queue.push_front(((0, 0), (0, 0), 0, 0));
 
     while !queue.is_empty() {
         let (position, last_step, n, h) = queue.pop_front().unwrap();
-        let res = step(&grid, &mut seen, position, last_step, n, h);
+        let res = step(
+            &grid,
+            &mut seen,
+            position,
+            last_step,
+            n,
+            h,
+            &mut min_heatloss,
+        );
 
         match res {
             Some(x) => {
@@ -107,16 +126,8 @@ fn process(input: &str) -> usize {
             None => (),
         }
     }
-    // dbg!(&seen);
-
-    // for y in 0..grid.len() {
-    //     for x in 0..grid[0].len() {
-    //         print!("{:4} ", seen.get(&(x, y)).unwrap());
-    //     }
-    //     println!();
-    // }
-
     let mut res = Vec::new();
+    dbg!(&seen.len());
     for ((pos, _, _), v) in seen.into_iter() {
         if pos == (grid[0].len() - 1, grid.len() - 1) {
             res.push(v);
@@ -124,7 +135,6 @@ fn process(input: &str) -> usize {
     }
 
     *res.iter().min().unwrap()
-    // *seen.get(&(grid[0].len() - 1, grid.len() - 1)).unwrap()
 }
 
 #[cfg(test)]

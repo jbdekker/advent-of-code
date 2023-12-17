@@ -4,7 +4,7 @@ fn main() {
     dbg!(output);
 }
 
-fn process(input: &str) -> i32 {
+fn process(input: &str) -> usize {
     4
 }
 
