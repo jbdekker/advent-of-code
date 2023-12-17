@@ -39,7 +39,11 @@ fn step(
     // crusible cant reverse
     options.retain(|v| v != &(-last_step.0, -last_step.1));
 
-    if n_last_direction == 3 {
+    // continue for >4 steps in the same direction
+    if n_last_direction < 4 {
+        options = vec![last_step];
+    }
+    if n_last_direction == 10 {
         // at most 3 steps in the same direction
         options.retain(|v| v != &last_step);
     }
@@ -103,7 +107,7 @@ fn process(input: &str) -> usize {
             None => (),
         }
     }
-    dbg!(&seen);
+    // dbg!(&seen);
 
     // for y in 0..grid.len() {
     //     for x in 0..grid[0].len() {
@@ -144,7 +148,7 @@ mod tests {
         2546548887735
         4322674655533",
         );
-        assert_eq!(result, 102)
+        assert_eq!(result, 94)
     }
 }
 
