@@ -8,24 +8,25 @@ fn main() {
 
 fn step(
     grid: &Vec<Vec<usize>>,
-    seen: &mut BTreeMap<(usize, usize), usize>,
+    seen: &mut BTreeMap<((usize, usize), (isize, isize), usize), usize>,
     position: (usize, usize),
     last_step: (isize, isize),
     n_last_direction: usize,
     heatloss: usize,
 ) -> Option<Vec<((usize, usize), (isize, isize), usize, usize)>> {
     let mut heatloss = heatloss;
-    if position != (0, 0) || (position == (0, 0) && seen.contains_key(&(0, 0))) {
+    if position != (0, 0) {
         heatloss += grid[position.1][position.0];
     }
 
-    if !seen.contains_key(&position) {
-        seen.insert(position, heatloss);
+    let key = (position, last_step, n_last_direction);
+    if !seen.contains_key(&key) {
+        seen.insert(key, heatloss);
     } else {
-        if seen.get(&position).unwrap() <= &heatloss {
+        if seen.get(&key).unwrap() <= &heatloss {
             return None;
         } else {
-            seen.insert(position, heatloss);
+            seen.insert(key, heatloss);
         }
     }
 
@@ -84,7 +85,7 @@ fn process(input: &str) -> usize {
         })
         .collect();
 
-    let mut seen: BTreeMap<(usize, usize), usize> = BTreeMap::new();
+    let mut seen: BTreeMap<((usize, usize), (isize, isize), usize), usize> = BTreeMap::new();
     let mut queue: VecDeque<((usize, usize), (isize, isize), usize, usize)> = VecDeque::new();
 
     queue.push_back(((0, 0), (0, 0), 0, 0));
@@ -104,14 +105,22 @@ fn process(input: &str) -> usize {
     }
     dbg!(&seen);
 
-    for y in 0..grid.len() {
-        for x in 0..grid[0].len() {
-            print!("{:4} ", seen.get(&(x, y)).unwrap());
+    // for y in 0..grid.len() {
+    //     for x in 0..grid[0].len() {
+    //         print!("{:4} ", seen.get(&(x, y)).unwrap());
+    //     }
+    //     println!();
+    // }
+
+    let mut res = Vec::new();
+    for ((pos, _, _), v) in seen.into_iter() {
+        if pos == (grid[0].len() - 1, grid.len() - 1) {
+            res.push(v);
         }
-        println!();
     }
 
-    *seen.get(&(grid[0].len() - 1, grid.len() - 1)).unwrap()
+    *res.iter().min().unwrap()
+    // *seen.get(&(grid[0].len() - 1, grid.len() - 1)).unwrap()
 }
 
 #[cfg(test)]
