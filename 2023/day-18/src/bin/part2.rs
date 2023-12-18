@@ -1,5 +1,6 @@
 use itertools::izip;
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashSet;
+use std::ops::Range;
 
 fn main() {
     let input = include_str!("input.txt");
@@ -8,7 +9,7 @@ fn main() {
 }
 
 fn dig(
-    plan: &mut HashMap<(isize, isize), (isize, isize)>,
+    plan: &mut HashSet<(isize, isize)>,
     last_dug_pos: (isize, isize),
     dir: char,
     n: usize,
@@ -33,41 +34,54 @@ fn dig(
         .collect();
 
     for position in positions_to_dig.iter() {
-        plan.insert(*position, step);
+        plan.insert(*position);
     }
 
     return *positions_to_dig.iter().last().unwrap();
 }
 
-fn dig_interior(plan: &mut HashMap<(isize, isize), (isize, isize)>) -> () {
+fn dig_interior(plan: &mut HashSet<(isize, isize)>) -> HashSet<(Range<isize>, isize)> {
     // calc the plan size
-    let x0 = plan.iter().map(|(k, _)| k.0).min().unwrap();
-    let x1 = plan.iter().map(|(k, _)| k.0).max().unwrap();
-    let y0 = plan.iter().map(|(k, _)| k.1).min().unwrap();
-    let y1 = plan.iter().map(|(k, _)| k.1).max().unwrap();
+    let x0 = plan.iter().map(|k| k.0).min().unwrap();
+    let x1 = plan.iter().map(|k| k.0).max().unwrap();
+    let y0 = plan.iter().map(|k| k.1).min().unwrap();
+    let y1 = plan.iter().map(|k| k.1).max().unwrap();
 
     println!("({x0}, {x1}), ({y0}, {y1})");
 
-    let mut inner_points: HashMap<(isize, isize), (isize, isize)> = HashMap::new();
-    for y in y0..=y1 {
-        for x in x0..=x1 {
-            if !inner_points.contains_key(&(x, y)) && !plan.contains_key(&(x, y)) {
-                let (ups, downs) = plan.iter().filter(|(k, _)| k.1 == y && k.0 > x).fold(
-                    (0, 0),
-                    |acc, (k, _v)| {
-                        let mut res = acc;
-                        if plan.contains_key(&(k.0, k.1 + 1)) {
-                            res = (res.0, res.1 + 1);
-                        }
-                        if plan.contains_key(&(k.0, k.1 - 1)) {
-                            res = (res.0 + 1, res.1);
-                        }
-                        res
-                    },
-                );
+    let mut inner_points: HashSet<(Range<isize>, isize)> = HashSet::new();
+    let mut x = x0;
+    let mut y = y0;
+    loop {
+        if y > y1 {
+            break;
+        }
+        loop {
+            if x > x1 {
+                break;
+            }
+            if !plan.contains(&(x, y)) {
+                let holes = plan
+                    .iter()
+                    .filter(|k| k.1 == y && k.0 > x)
+                    .collect::<HashSet<_>>();
+
+                let (ups, downs) = holes.iter().fold((0, 0), |acc, k| {
+                    let mut res = acc;
+                    if plan.contains(&(k.0, k.1 + 1)) {
+                        res = (res.0, res.1 + 1);
+                    }
+                    if plan.contains(&(k.0, k.1 - 1)) {
+                        res = (res.0 + 1, res.1);
+                    }
+                    res
+                });
+
                 if ups % 2 == 1 && downs % 2 == 1 {
-                    inner_points.insert((x, y), (0, 0));
-                    flood(&plan, &mut inner_points, (x, y));
+                    let inner_range = flood_range(&holes, (x, y));
+                    inner_points.insert((inner_range.clone(), y));
+                    x = inner_range.end;
+
                     print!("I");
                 } else {
                     print!(".");
@@ -76,31 +90,21 @@ fn dig_interior(plan: &mut HashMap<(isize, isize), (isize, isize)>) -> () {
                 print!("#");
             }
         }
+        y += 1;
+        x = 0;
         print!("\n");
     }
 
-    plan.extend(inner_points);
+    inner_points
 }
 
-fn flood(
-    plan: &HashMap<(isize, isize), (isize, isize)>,
-    inner_points: &mut HashMap<(isize, isize), (isize, isize)>,
-    point: (isize, isize),
-) -> () {
-    let mut queue: VecDeque<(isize, isize)> = VecDeque::new();
-    queue.push_back(point);
-
-    let options = vec![(1, 0), (-1, 0), (0, 1), (0, -1)];
-    while !queue.is_empty() {
-        inner_points.insert(point, (0, 0));
-
-        for option in options.iter() {
-            let new_point = (point.0 + option.0, point.1 + option.1);
-            match plan.contains_key(&new_point) {
-                false => queue.push_back(new_point),
-                true => (),
-            }
+fn flood_range(plan: &HashSet<&(isize, isize)>, point: (isize, isize)) -> Range<isize> {
+    let mut i = 1;
+    loop {
+        if plan.contains(&(point.0 + i, point.1)) {
+            return (point.0)..(point.0 + i);
         }
+        i += 1;
     }
 }
 
@@ -132,12 +136,12 @@ fn process(input: &str) -> usize {
     dbg!(&num);
 
     let mut pos = (-1, 0);
-    let mut plan: HashMap<(isize, isize), (isize, isize)> = HashMap::new();
+    let mut plan: HashSet<(isize, isize)> = HashSet::new();
     for (d, n) in izip!(&dir, &num) {
         pos = dig(&mut plan, pos, *d, *n);
     }
 
-    dig_interior(&mut plan);
+    // dig_interior(&mut plan);
 
     // dbg!(&plan);
 
