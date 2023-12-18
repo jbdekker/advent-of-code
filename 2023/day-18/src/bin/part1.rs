@@ -51,17 +51,18 @@ fn dig_interior(plan: &mut HashMap<(isize, isize), ((isize, isize), String)>) ->
         for x in x0..=x1 {
             if !plan.contains_key(&(x, y)) {
                 let crossings = plan.iter().fold((0, 0), |acc, (k, v)| {
-                    if k.1 == y
-                        && k.0 > x
-                        && (plan.contains_key(&(k.0, k.1 + 1))
-                            || plan.contains_key(&(k.0, k.1 - 1)))
-                    {
-                        acc + 1
-                    } else {
-                        acc
+                    let mut res = acc;
+                    if k.1 == y && k.0 > x {
+                        if plan.contains_key(&(k.0, k.1 + 1)) {
+                            res = (res.0, res.1 + 1);
+                        }
+                        if plan.contains_key(&(k.0, k.1 - 1)) {
+                            res = (res.0 + 1, res.1);
+                        }
                     }
+                    res
                 });
-                if crossings % 2 == 1 {
+                if crossings.0 % 2 == 1 && crossings.1 % 2 == 1 {
                     inner_points.insert((x, y), ((0, 0), "".to_string()));
                     print!("I");
                 } else {
