@@ -9,7 +9,8 @@ fn main() {
 }
 
 fn dig(
-    plan: &mut HashSet<(isize, isize)>,
+    hplan: &mut HashSet<(Range<isize>, isize)>,
+    vplan: &mut HashSet<(isize, Range<isize>)>,
     last_dug_pos: (isize, isize),
     dir: char,
     n: usize,
@@ -24,34 +25,70 @@ fn dig(
         }
     };
 
-    let positions_to_dig: Vec<(isize, isize)> = (0..n)
-        .map(|i| {
-            (
-                last_dug_pos.0 + step.0 * (1 + i) as isize,
-                last_dug_pos.1 + step.1 * (1 + i) as isize,
-            )
-        })
-        .collect();
-
-    for position in positions_to_dig.iter() {
-        plan.insert(*position);
+    if step.0 != 0 {
+        hplan.insert((
+            (last_dug_pos.0 + 1)..(last_dug_pos.0 + 5 + 1),
+            last_dug_pos.1,
+        ));
+        return (last_dug_pos.0 + 5, last_dug_pos.1);
+    } else {
+        vplan.insert((
+            last_dug_pos.0,
+            (last_dug_pos.1 + 1)..(last_dug_pos.1 + 5 + 1),
+        ));
+        return (last_dug_pos.0, last_dug_pos.1 + 5);
     }
-
-    return *positions_to_dig.iter().last().unwrap();
 }
 
-fn dig_interior(plan: &mut HashSet<(isize, isize)>) -> HashSet<(Range<isize>, isize)> {
+fn is_hole(
+    hplan: &HashSet<(Range<isize>, isize)>,
+    vplan: &HashSet<(isize, Range<isize>)>,
+    point: (isize, isize),
+) -> bool {
+    vplan
+        .iter()
+        .any(|(x, r)| point.0 == *x && r.contains(&point.1))
+        || hplan
+            .iter()
+            .any(|(r, y)| point.1 == *y && r.contains(&point.0))
+}
+
+fn holes_on_row(
+    hplan: &HashSet<(Range<isize>, isize)>,
+    vplan: &HashSet<(isize, Range<isize>)>,
+    y: isize,
+) -> Vec<(isize, isize)> {
+    let mut res: Vec<(isize, isize)> = Vec::new();
+
+    for (r, y_hat) in hplan.iter() {
+        if y_hat == &y {
+            res.push((r.start, *y_hat));
+            res.push((r.end - 1, *y_hat)); // range is exclusive
+        }
+    }
+    for (x_hat, r) in vplan.iter() {
+        if r.contains(&y) {
+            res.push((*x_hat, y))
+        }
+    }
+
+    res
+}
+
+fn dig_interior(
+    hplan: &HashSet<(Range<isize>, isize)>,
+    vplan: &HashSet<(isize, Range<isize>)>,
+) -> HashSet<(Range<isize>, isize)> {
     // calc the plan size
-    let x0 = plan.iter().map(|k| k.0).min().unwrap();
-    let x1 = plan.iter().map(|k| k.0).max().unwrap();
-    let y0 = plan.iter().map(|k| k.1).min().unwrap();
-    let y1 = plan.iter().map(|k| k.1).max().unwrap();
+    let x0 = hplan.iter().map(|k| k.0.start).min().unwrap();
+    let x1 = hplan.iter().map(|k| k.0.end).max().unwrap();
+    let y0 = vplan.iter().map(|k| k.1.start).min().unwrap();
+    let y1 = vplan.iter().map(|k| k.1.end).max().unwrap();
 
     println!("({x0}, {x1}), ({y0}, {y1})");
 
     let mut inner_points: HashSet<(Range<isize>, isize)> = HashSet::new();
-    let mut x = x0;
-    let mut y = y0;
+    let (mut x, mut y) = (x0, y0);
     loop {
         if y > y1 {
             break;
@@ -60,18 +97,14 @@ fn dig_interior(plan: &mut HashSet<(isize, isize)>) -> HashSet<(Range<isize>, is
             if x > x1 {
                 break;
             }
-            if !plan.contains(&(x, y)) {
-                let holes = plan
-                    .iter()
-                    .filter(|k| k.1 == y && k.0 > x)
-                    .collect::<HashSet<_>>();
-
-                let (ups, downs) = holes.iter().fold((0, 0), |acc, k| {
+            if !is_hole(hplan, vplan, (x, y)) {
+                let holes = holes_on_row(hplan, vplan, y);
+                let (ups, downs) = holes.iter().fold((0, 0), |acc, (x_hat, y_hat)| {
                     let mut res = acc;
-                    if plan.contains(&(k.0, k.1 + 1)) {
+                    if is_hole(hplan, vplan, (*x_hat, y_hat + 1)) {
                         res = (res.0, res.1 + 1);
                     }
-                    if plan.contains(&(k.0, k.1 - 1)) {
+                    if is_hole(hplan, vplan, (*x_hat, y_hat - 1)) {
                         res = (res.0 + 1, res.1);
                     }
                     res
@@ -81,24 +114,17 @@ fn dig_interior(plan: &mut HashSet<(isize, isize)>) -> HashSet<(Range<isize>, is
                     let inner_range = flood_range(&holes, (x, y));
                     inner_points.insert((inner_range.clone(), y));
                     x = inner_range.end;
-
-                    print!("I");
-                } else {
-                    print!(".");
                 }
-            } else {
-                print!("#");
             }
         }
         y += 1;
         x = 0;
-        print!("\n");
     }
 
     inner_points
 }
 
-fn flood_range(plan: &HashSet<&(isize, isize)>, point: (isize, isize)) -> Range<isize> {
+fn flood_range(plan: &Vec<(isize, isize)>, point: (isize, isize)) -> Range<isize> {
     let mut i = 1;
     loop {
         if plan.contains(&(point.0 + i, point.1)) {
@@ -136,17 +162,20 @@ fn process(input: &str) -> usize {
     dbg!(&num);
 
     let mut pos = (-1, 0);
-    let mut plan: HashSet<(isize, isize)> = HashSet::new();
+    let mut hplan: HashSet<(Range<isize>, isize)> = HashSet::new();
+    let mut vplan: HashSet<(isize, Range<isize>)> = HashSet::new();
     for (d, n) in izip!(&dir, &num) {
-        pos = dig(&mut plan, pos, *d, *n);
+        pos = dig(&mut hplan, &mut vplan, pos, *d, *n);
     }
 
-    // dig_interior(&mut plan);
+    let inner_holes = dig_interior(&hplan, &vplan);
 
+    let h_holes = hplan.iter().fold(0, |acc, (r, _)| acc + r.len());
+    let v_holes = vplan.iter().fold(0, |acc, (_, r)| acc + r.len());
+    let inner_holes = inner_holes.iter().fold(0, |acc, (r, _)| acc + r.len());
     // dbg!(&plan);
 
-    dbg!(&num.iter().sum::<usize>());
-    plan.len()
+    h_holes + v_holes + inner_holes
 }
 
 #[cfg(test)]
