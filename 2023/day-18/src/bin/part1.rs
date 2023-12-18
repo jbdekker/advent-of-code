@@ -30,9 +30,12 @@ fn dig(
     };
 
     let dig_at_pos = (last_dug_pos.0 + step.0, last_dug_pos.1 + step.1);
-    if !plan.contains_key(&dig_at_pos) {
-        plan.insert(dig_at_pos, (step, color.clone()));
-    }
+
+    // if plan.contains_key(&dig_at_pos) {
+    //     panic!("already dug @ {:?}", dig_at_pos);
+    // }
+
+    plan.insert(dig_at_pos, (step, color.clone()));
 
     return dig(plan, dig_at_pos, dir, color, n - 1);
 }
@@ -50,7 +53,7 @@ fn dig_interior(plan: &mut HashMap<(isize, isize), ((isize, isize), String)>) ->
     for y in y0..=y1 {
         for x in x0..=x1 {
             if !plan.contains_key(&(x, y)) {
-                let crossings = plan.iter().fold((0, 0), |acc, (k, v)| {
+                let (ups, downs) = plan.iter().fold((0, 0), |acc, (k, _v)| {
                     let mut res = acc;
                     if k.1 == y && k.0 > x {
                         if plan.contains_key(&(k.0, k.1 + 1)) {
@@ -62,11 +65,10 @@ fn dig_interior(plan: &mut HashMap<(isize, isize), ((isize, isize), String)>) ->
                     }
                     res
                 });
-                if crossings.0 % 2 == 1 && crossings.1 % 2 == 1 {
+                if ups % 2 == 1 && downs % 2 == 1 {
                     inner_points.insert((x, y), ((0, 0), "".to_string()));
                     print!("I");
                 } else {
-                    // print!("{}", crossings);
                     print!(".");
                 }
             } else {
@@ -90,7 +92,7 @@ fn process(input: &str) -> usize {
 
             (
                 a.trim().chars().next().unwrap(),
-                b.trim().chars().next().unwrap().to_digit(10).unwrap() as usize,
+                b.trim().parse::<usize>().unwrap(),
                 c.trim().replace('(', "").replace(')', ""),
             )
         })
@@ -110,6 +112,7 @@ fn process(input: &str) -> usize {
 
     // dbg!(&plan);
 
+    dbg!(&num.iter().sum::<usize>());
     plan.len()
 }
 
