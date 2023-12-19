@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use itertools::Itertools;
+use regex::{Captures, Regex};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -6,13 +9,147 @@ fn main() {
     dbg!(output);
 }
 
+#[derive(Debug)]
+struct Part {
+    x: usize,
+    m: usize,
+    a: usize,
+    s: usize,
+}
+impl Part {
+    fn from_str(input: &str) -> Part {
+        let re = Regex::new(r"x=([0-9]+),m=([0-9]+),a=([0-9]+),s=([0-9]+)").unwrap();
+
+        let caps = re.captures(input).unwrap();
+
+        Part {
+            x: caps.get(1).unwrap().as_str().parse().unwrap(),
+            m: caps.get(2).unwrap().as_str().parse().unwrap(),
+            a: caps.get(3).unwrap().as_str().parse().unwrap(),
+            s: caps.get(4).unwrap().as_str().parse().unwrap(),
+        }
+    }
+    fn rating(&self) -> usize {
+        self.x + self.m + self.a + self.s
+    }
+}
+
+#[derive(Debug)]
+struct Rule {
+    category: char,
+    operator: char,
+    value: usize,
+    target: String,
+}
+
+impl Rule {
+    fn from_str(input: &str) -> Rule {
+        let re = Regex::new(r"([a-z])([<>])([0-9]+):([a-zA-Z]+)").unwrap();
+
+        let caps = re.captures(input).unwrap();
+
+        Rule {
+            category: caps.get(1).unwrap().as_str().chars().next().unwrap(),
+            operator: caps.get(2).unwrap().as_str().chars().next().unwrap(),
+            value: caps.get(3).unwrap().as_str().parse().unwrap(),
+            target: caps.get(4).unwrap().as_str().to_string(),
+        }
+    }
+
+    fn apply(&self, part: &Part) -> Option<String> {
+        let rel_value = match self.category {
+            'x' => part.x,
+            'm' => part.m,
+            'a' => part.a,
+            's' => part.s,
+            _ => panic!("Should be unreachable!"),
+        };
+
+        let res = match self.operator {
+            '>' => rel_value > self.value,
+            '<' => rel_value < self.value,
+            _ => panic!("Should be unreachable!"),
+        };
+
+        match res {
+            true => Some(self.target.clone()),
+            false => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Workflow {
+    name: String,
+    rules: Vec<Rule>,
+    default_target: String,
+}
+
+impl Workflow {
+    fn from_str(input: &str) -> Workflow {
+        let re = Regex::new(r"([a-z]+)\{(([a-z][<>][0-9]+:[a-zA-Z]+[,]*)+),([a-zA-Z]+)\}").unwrap();
+
+        let caps = re.captures(input).unwrap();
+
+        Workflow {
+            name: caps.get(1).unwrap().as_str().to_string(),
+            rules: caps
+                .get(2)
+                .unwrap()
+                .as_str()
+                .split(",")
+                .map(|x| Rule::from_str(x))
+                .collect(),
+            default_target: caps.get(4).unwrap().as_str().to_string(),
+        }
+    }
+
+    fn process(&self, part: &Part) -> String {
+        let res: Vec<String> = self
+            .rules
+            .iter()
+            .filter_map(|rule| rule.apply(&part))
+            .collect();
+
+        if res.len() == 0 {
+            return self.default_target.clone();
+        } else {
+            return res[0].clone();
+        }
+    }
+}
+
 fn process(input: &str) -> usize {
-    let (instructions, parts) = input.split("\n\n").collect_tuple().unwrap();
+    let (workflows, parts) = input.split("\n\n").collect_tuple().unwrap();
 
-    dbg!(&instructions);
-    dbg!(&parts);
+    let parts: Vec<Part> = parts.lines().map(|p| Part::from_str(p)).collect();
+    let workflows: Vec<Workflow> = workflows.lines().map(|l| Workflow::from_str(l)).collect();
 
-    todo!()
+    let workflows: HashMap<String, Workflow> =
+        workflows.into_iter().map(|w| (w.name.clone(), w)).collect();
+
+    // dbg!(&workflows);
+    // dbg!(&parts);
+
+    let rating = parts
+        .into_iter()
+        .filter_map(|part| {
+            let mut next_workflow = "in".to_string();
+            loop {
+                let workflow = workflows.get(&next_workflow).unwrap();
+
+                next_workflow = workflow.process(&part);
+
+                match next_workflow.as_str() {
+                    "R" => break None,
+                    "A" => break Some(part.rating()),
+                    _ => continue,
+                }
+            }
+        })
+        .sum::<usize>();
+
+    rating
 }
 
 #[cfg(test)]
@@ -40,6 +177,6 @@ hdj{m>838:A,pv}
 {x=2461,m=1339,a=466,s=291}
 {x=2127,m=1623,a=2188,s=1013}",
         );
-        assert_eq!(result, 4)
+        assert_eq!(result, 19114)
     }
 }
