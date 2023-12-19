@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use itertools::Itertools;
-use regex::{Captures, Regex};
+use regex::Regex;
 
 fn main() {
     let input = include_str!("input.txt");
@@ -127,9 +127,6 @@ fn process(input: &str) -> usize {
 
     let workflows: HashMap<String, Workflow> =
         workflows.into_iter().map(|w| (w.name.clone(), w)).collect();
-
-    // dbg!(&workflows);
-    // dbg!(&parts);
 
     let rating = parts
         .into_iter()
