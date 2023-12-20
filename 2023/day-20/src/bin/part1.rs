@@ -14,7 +14,7 @@ enum Pulse {
     Low,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum State {
     On,
     Off,
@@ -31,23 +31,36 @@ enum ModuleType {
 
 #[derive(Debug, Clone)]
 struct Module {
-    mtype: ModuleType,
     name: String,
+    mtype: ModuleType,
     destinations: Vec<String>,
     state: State,
     history: BTreeMap<String, Pulse>,
 }
 
 impl Module {
+    fn init_history(&mut self, inputs: Vec<String>) -> () {
+        for input in inputs.into_iter() {
+            self.history.insert(input, Pulse::Low);
+        }
+    }
     fn process(&mut self, pulse: Pulse, origin: String) -> Option<(Vec<String>, Pulse)> {
         match self.mtype {
             ModuleType::Broadcaster => Some((self.destinations.clone(), pulse)),
             ModuleType::Button => Some((self.destinations.clone(), Pulse::Low)),
             ModuleType::Conjunction => {
                 self.history.insert(origin, pulse);
+                // println!(
+                //     "\t> Conjunction `{}` states: #{}",
+                //     self.name,
+                //     self.history.len()
+                // );
+                // for (k, v) in self.history.iter() {
+                //     println!("\t\t{} -> {:?}", k, v);
+                // }
                 match self.history.values().all(|v| *v == Pulse::High) {
                     true => Some((self.destinations.clone(), Pulse::Low)),
-                    false => Some((self.destinations.clone(), Pulse::Low)),
+                    false => Some((self.destinations.clone(), Pulse::High)),
                 }
             }
             ModuleType::FlipFlop => match pulse {
@@ -93,51 +106,94 @@ fn process(input: &str) -> usize {
         .map(|d| d.split(",").map(|x| x.trim().to_string()).collect())
         .collect();
 
-    let mut modules: Vec<Module> = Vec::new();
-    modules.push(Module {
-        name: "button".to_string(),
-        mtype: ModuleType::Button,
-        destinations: vec!["broadcaster".to_string()],
-        history: BTreeMap::new(),
-        state: State::None,
-    });
-
-    let mut configurations: BTreeMap<String, &mut Module> = BTreeMap::new();
+    let mut modules: Vec<(String, Module)> = Vec::new();
+    modules.push((
+        "button".to_string(),
+        Module {
+            name: "button".to_string(),
+            mtype: ModuleType::Button,
+            destinations: vec!["broadcaster".to_string()],
+            history: BTreeMap::new(),
+            state: State::None,
+        },
+    ));
 
     for ((name, mtype), destination) in module_name.iter().zip(&module_type).zip(&destinations) {
-        modules.push(Module {
-            mtype: mtype.clone(),
-            name: name.clone(),
-            destinations: destination.clone(),
-            state: match mtype {
-                ModuleType::FlipFlop => State::Off,
-                _ => State::None,
+        modules.push((
+            name.clone(),
+            Module {
+                name: name.clone(),
+                mtype: mtype.clone(),
+                destinations: destination.clone(),
+                state: match mtype {
+                    ModuleType::FlipFlop => State::Off,
+                    _ => State::None,
+                },
+                history: BTreeMap::new(),
             },
-            history: BTreeMap::new(),
-        });
-
-        configurations.insert(name.clone(), &modules.last().unwrap());
+        ));
     }
 
+    let modules_copy = modules.clone();
+
     // init the conjunctions
-    for (name, module) in configurations.iter_mut() {
-        for destination in module.destinations.iter() {
-            if configurations.get(destination).unwrap().mtype == ModuleType::Conjunction {
-                configurations
-                    .entry(destination.to_string())
-                    .and_modify(|f| {
-                        f.history.insert(name.clone(), Pulse::Low);
-                    });
-            }
+    for (name, module) in modules.iter_mut() {
+        if module.mtype == ModuleType::Conjunction {
+            let inputs: Vec<String> = modules_copy
+                .iter()
+                .filter_map(|(n, m)| {
+                    if m.destinations.contains(name) {
+                        Some(n.to_string())
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            // dbg!(&inputs);
+            module.init_history(inputs);
         }
     }
 
-    dbg!(&configurations);
+    // panic!();
+    dbg!(&modules);
 
-    let mut queue: VecDeque<&Module> = VecDeque::new();
-    // loop {}
+    let mut n_high_pulses = 0;
+    let mut n_low_pulses = 0;
+    for _ in 0..1000 {
+        let mut queue: VecDeque<(String, Pulse, String)> = VecDeque::new();
 
-    todo!();
+        queue.push_back(("broadcaster".to_string(), Pulse::Low, "button".to_string()));
+
+        while !queue.is_empty() {
+            let (target, pulse, origin) = queue.pop_front().unwrap();
+            println!("{origin} -{pulse:?} -> {target}");
+            match pulse {
+                Pulse::High => n_high_pulses += 1,
+                Pulse::Low => n_low_pulses += 1,
+            }
+            for (name, module) in modules.iter_mut() {
+                if name.to_string() == target {
+                    match module.process(pulse, origin.to_string()) {
+                        Some((new_targets, p)) => {
+                            for dest in new_targets {
+                                queue.push_back((dest, p, target.clone()))
+                            }
+                        }
+                        None => (),
+                    }
+                }
+            }
+        }
+        println!("\n\n");
+        // println!("{:?}", &modules);
+        // println!("\n\n");
+    }
+
+    dbg!(n_low_pulses);
+    dbg!(n_high_pulses);
+
+    n_low_pulses * n_high_pulses
 }
 
 #[cfg(test)]
@@ -148,11 +204,23 @@ mod tests {
     fn it_works() {
         let result = process(
             "broadcaster -> a, b, c
-%a -> b
-%b -> c
-%c -> inv
-&inv -> a",
+    %a -> b
+    %b -> c
+    %c -> inv
+    &inv -> a",
         );
         assert_eq!(result, 32000000)
+    }
+
+    #[test]
+    fn it_works_2() {
+        let result = process(
+            "broadcaster -> a
+%a -> inv, con
+&inv -> b
+%b -> con
+&con -> output",
+        );
+        assert_eq!(result, 11687500)
     }
 }
