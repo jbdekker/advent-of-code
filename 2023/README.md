@@ -5,7 +5,7 @@ In this repository I'll post my solutions for the Advent of Code[^aoc] puzzles u
 ### List of techniques used
 - Recursion / dynamic programming
     - [Divide-and-conquer][dac]
-    - [mMmoization][mem]
+    - [Moization][mem]
 - Tree search:
     - [Breadth-first search][bfs]
     - [Depth-first search][dfs]
