@@ -1,6 +1,6 @@
 # Advent of Code - 2023 - Rust
 
-In this repository I'll post my solutions for the puzzles using the language [Rust][rust].
+In this repository I'll post my solutions for the Advent of Code[^aoc] puzzles using the language [Rust][rust].
 
 [^aoc]:
     [Advent of Code][aoc] – An annual event of Christmas-oriented programming challenges started December 2015.
