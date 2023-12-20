@@ -7,4 +7,5 @@ In this repository I'll post my solutions for the Advent of Code[^aoc] puzzles u
     Every year since then, beginning on the first day of December, a programming puzzle is published every day for twenty-five days.
     You can solve the puzzle and provide an answer using the language of your choice.
 
+[aoc]: https://adventofcode.com
 [rust]: https://www.rust-lang.org/
