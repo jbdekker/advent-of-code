@@ -120,7 +120,7 @@ fn process(input: &str) -> usize {
         }
     }
 
-    let bricks_that_support: HashMap<&Brick, Vec<&Brick>> = bricks
+    let is_supported_by: HashMap<&Brick, Vec<&Brick>> = bricks
         .iter()
         .map(|this| {
             (
@@ -146,49 +146,42 @@ fn process(input: &str) -> usize {
         })
         .collect();
 
-    let sum_of_chains: usize = bricks
-        .iter()
-        .map(|brick| {
-            let mut fallen_bricks: HashSet<&Brick> = HashSet::from([brick]);
+    let mut total = 0;
+    for brick in bricks.iter() {
+        let mut falling: HashSet<&Brick> = supports
+            .get(&brick)
+            .unwrap()
+            .iter()
+            .filter_map(|b| match is_supported_by.get(&brick).unwrap().len() == 1 {
+                true => Some(brick),
+                false => None,
+            })
+            .collect();
+        falling.insert(&brick);
 
-            let mut might_be_unsupported: HashSet<&Brick> = HashSet::new();
-            might_be_unsupported.extend(supports.get(brick).unwrap().iter());
+        let mut q: VecDeque<&Brick> = VecDeque::from_iter(falling.clone());
 
-            loop {
-                let mut bricks_fallen_this_round: Vec<&Brick> = Vec::new();
-                for brick in might_be_unsupported.iter() {
-                    let supports_of_this_brick = bricks_that_support.get(brick).unwrap();
-                    let supports_not_desintegrated = supports_of_this_brick
-                        .into_iter()
-                        .filter(|x| !fallen_bricks.contains(*x))
-                        .count();
+        while !q.is_empty() {
+            let b = q.pop_front().unwrap();
 
-                    if supports_not_desintegrated == 0 {
-                        bricks_fallen_this_round.push(brick);
+            for k in supports.get(b).unwrap().iter() {
+                if !falling.contains(k) {
+                    if is_supported_by
+                        .get(k)
+                        .unwrap()
+                        .iter()
+                        .all(|x| falling.contains(x))
+                    {
+                        q.push_back(&k);
+                        falling.insert(&k);
                     }
                 }
-
-                if bricks_fallen_this_round.len() > 0 {
-                    for b in bricks_fallen_this_round.iter() {
-                        might_be_unsupported.remove(b);
-                        might_be_unsupported.extend(supports.get(b).unwrap().iter());
-                    }
-                    fallen_bricks.extend(bricks_fallen_this_round.iter());
-                } else {
-                    break;
-                }
             }
+        }
+        total += falling.len() - 1;
+    }
 
-            if fallen_bricks.len() > 1 {
-                // dbg!(&brick);
-                // dbg!(&fallen_bricks);
-            }
-
-            fallen_bricks.len() - 1
-        })
-        .sum();
-
-    sum_of_chains
+    total
 }
 
 #[cfg(test)]
@@ -211,3 +204,4 @@ mod tests {
 }
 
 //  68326 => to low
+//  68326
