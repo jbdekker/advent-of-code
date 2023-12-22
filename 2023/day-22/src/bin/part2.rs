@@ -151,44 +151,39 @@ fn process(input: &str) -> usize {
         .map(|brick| {
             let mut fallen_bricks: HashSet<&Brick> = HashSet::from([brick]);
 
-            let mut queue: VecDeque<&Brick> = VecDeque::new();
+            let mut might_be_unsupported: HashSet<&Brick> = HashSet::new();
+            might_be_unsupported.extend(supports.get(brick).unwrap().iter());
 
-            queue.push_back(brick);
-            while !queue.is_empty() {
-                let this_brick: &Brick = queue.pop_front().unwrap();
+            loop {
+                let mut bricks_fallen_this_round: Vec<&Brick> = Vec::new();
+                for brick in might_be_unsupported.iter() {
+                    let supports_of_this_brick = bricks_that_support.get(brick).unwrap();
+                    let supports_not_desintegrated = supports_of_this_brick
+                        .into_iter()
+                        .filter(|x| !fallen_bricks.contains(*x))
+                        .count();
 
-                let might_fall: &Vec<&Brick> = supports.get(this_brick).unwrap();
-
-                let will_fall: Vec<&Brick> = might_fall
-                    .into_iter()
-                    .filter_map(|other_brick| {
-                        let supports = bricks_that_support
-                            .get(*other_brick)
-                            .unwrap()
-                            .into_iter()
-                            .filter(|support| !fallen_bricks.contains(*support));
-
-                        match supports.count() {
-                            0 => Some(*other_brick),
-                            _ => None,
-                        }
-                    })
-                    .collect();
-
-                for falling_brick in will_fall.iter() {
-                    queue.push_back(*falling_brick);
+                    if supports_not_desintegrated == 0 {
+                        bricks_fallen_this_round.push(brick);
+                    }
                 }
 
-                fallen_bricks.extend(will_fall.into_iter());
+                if bricks_fallen_this_round.len() > 0 {
+                    for b in bricks_fallen_this_round.iter() {
+                        might_be_unsupported.remove(b);
+                        might_be_unsupported.extend(supports.get(b).unwrap().iter());
+                    }
+                    fallen_bricks.extend(bricks_fallen_this_round.iter());
+                } else {
+                    break;
+                }
             }
 
             if fallen_bricks.len() > 1 {
                 // dbg!(&brick);
-                // dbg!(&chain);
+                // dbg!(&fallen_bricks);
             }
 
-            dbg!(&brick);
-            dbg!(&fallen_bricks);
             fallen_bricks.len() - 1
         })
         .sum();
