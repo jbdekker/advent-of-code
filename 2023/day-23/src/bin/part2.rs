@@ -14,8 +14,7 @@ fn process(input: &str) -> usize {
     queue.push_back((seen, (1, 0), 0));
 
     let dirs = vec![(1, 0), (-1, 0), (0, 1), (0, -1)];
-    let mut cache: HashMap<((isize, isize), (isize, isize)), Option<((isize, isize), usize)>> =
-        HashMap::new();
+    let mut cache: HashMap<(isize, isize), Option<((isize, isize), usize)>> = HashMap::new();
 
     fn jump(
         point: (isize, isize),
@@ -81,12 +80,12 @@ fn process(input: &str) -> usize {
                     .collect();
 
                 if next_steps.len() == 1 {
-                    let jmp_res = match cache.contains_key(&(next_steps[0], point)) {
-                        true => cache.get(&(next_steps[0], point)).unwrap(),
+                    let jmp_res = match cache.contains_key(&next_steps[0]) {
+                        true => cache.get(&next_steps[0]).unwrap(),
                         false => {
                             let jmp_res = jump(next_steps[0], point, 1, &maze);
-                            cache.insert((next_steps[0], point), jmp_res);
-                            cache.get(&(next_steps[0], point)).unwrap()
+                            cache.insert(next_steps[0], jmp_res);
+                            cache.get(&next_steps[0]).unwrap()
                         }
                     };
 
