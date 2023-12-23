@@ -14,34 +14,6 @@ fn process(input: &str) -> usize {
     queue.push_back((seen, (1, 0), 0));
 
     let dirs = vec![(1, 0), (-1, 0), (0, 1), (0, -1)];
-
-    let holes_per_row: Vec<Vec<(isize, isize)>> = maze
-        .iter()
-        .enumerate()
-        .map(|(y, r)| {
-            r.iter()
-                .enumerate()
-                .filter_map(|(x, c)| match c {
-                    '#' => None,
-                    _ => Some((x as isize, y as isize)),
-                })
-                .collect()
-        })
-        .collect();
-
-    let mut holes_per_column: Vec<Vec<(isize, isize)>> = Vec::new();
-    for x in 0..maze[0].len() {
-        holes_per_column.push(Vec::new());
-        for y in 0..maze.len() {
-            match maze[y][x] {
-                '#' => (),
-                _ => {
-                    holes_per_column[x].push((x as isize, y as isize));
-                }
-            }
-        }
-    }
-
     let mut cache: HashMap<((isize, isize), (isize, isize)), Option<((isize, isize), usize)>> =
         HashMap::new();
 
@@ -128,20 +100,6 @@ fn process(input: &str) -> usize {
                         }
                     }
                 } else {
-                    // check to the right
-                    let holes_on_the_right = &holes_per_column[point.0 as usize + 1];
-                    if holes_on_the_right.iter().all(|h| seen.contains(&h)) {
-                        println!("Continue because of holes-on-the-right check!");
-                        continue;
-                    }
-
-                    // // check below
-                    let holes_below = &holes_per_row[point.1 as usize + 1];
-                    if holes_below.iter().all(|h| seen.contains(&h)) {
-                        println!("Continue because of holes-below check!");
-                        continue;
-                    }
-
                     for next_point in next_steps.into_iter() {
                         queue.push_front((seen.clone(), next_point, n_steps + 1));
                     }
