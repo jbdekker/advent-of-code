@@ -1,6 +1,4 @@
-use std::collections::{HashSet, VecDeque};
-
-use memoize::memoize;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -38,28 +36,23 @@ fn process(input: &str) -> usize {
             match maze[y][x] {
                 '#' => (),
                 _ => {
-                    // if !holes_per_column.len() < x {
-                    //     holes_per_column.push(Vec::new());
-                    // }
                     holes_per_column[x].push((x as isize, y as isize));
                 }
             }
         }
     }
 
-    #[memoize]
+    let mut cache: HashMap<((isize, isize), (isize, isize)), Option<((isize, isize), usize)>> =
+        HashMap::new();
+
     fn jump(
         point: (isize, isize),
         prev_point: (isize, isize),
         n_steps: usize,
-        maze: Vec<Vec<char>>,
-        visited: Vec<(isize, isize)>,
-    ) -> Option<((isize, isize), usize, Vec<(isize, isize)>)> {
-        let mut visited = visited;
-        visited.push(point);
-
+        maze: &Vec<Vec<char>>,
+    ) -> Option<((isize, isize), usize)> {
         if point.1 + 1 == maze.len() as isize {
-            return Some((point, n_steps, visited));
+            return Some((point, n_steps));
         }
 
         let next_steps: Vec<_> = vec![(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -78,12 +71,9 @@ fn process(input: &str) -> usize {
             .collect();
 
         match next_steps.len() {
-            0 => {
-                // println!("Jump {:?} -> {:?} ended on a dead-end", prev_point, point);
-                None
-            }
-            1 => return jump(next_steps[0], point, n_steps + 1, maze, visited),
-            _ => Some((point, n_steps, visited)),
+            0 => None,
+            1 => return jump(next_steps[0], point, n_steps + 1, maze),
+            _ => Some((point, n_steps)),
         }
     }
 
@@ -91,15 +81,10 @@ fn process(input: &str) -> usize {
     while !queue.is_empty() {
         let (mut seen, point, n_steps) = queue.pop_front().unwrap();
 
-        // println!("point: {:?}, n_steps: {}", point, n_steps);
-
         if point.1 == maze.len() as isize - 1 {
             if n_steps > ans {
                 ans = n_steps;
                 println!("Found best solution until now: {} steps!", n_steps);
-            }
-            if ans == 6158 {
-                break;
             }
             continue;
         }
@@ -124,16 +109,22 @@ fn process(input: &str) -> usize {
                     .collect();
 
                 if next_steps.len() == 1 {
-                    // println!("Look for jump, starting at {:?}", point);
-                    match jump(next_steps[0], point, 1, maze.clone(), Vec::new()) {
+                    let jmp_res = match cache.contains_key(&(next_steps[0], point)) {
+                        true => cache.get(&(next_steps[0], point)).unwrap(),
+                        false => {
+                            let jmp_res = jump(next_steps[0], point, 1, &maze);
+                            cache.insert((next_steps[0], point), jmp_res);
+                            cache.get(&(next_steps[0], point)).unwrap()
+                        }
+                    };
+
+                    match jmp_res {
                         None => continue, // dead-end
-                        Some((next_point, n_jumped, visited)) => {
+                        Some((next_point, n_jumped)) => {
                             if seen.contains(&next_point) {
                                 continue;
                             }
-                            seen.extend(visited.iter());
-                            // println!("Jumped from {:?} to @ {:?}", point, next_point);
-                            queue.push_front((seen.clone(), next_point, n_steps + n_jumped));
+                            queue.push_front((seen.clone(), *next_point, n_steps + n_jumped));
                         }
                     }
                 } else {
@@ -144,7 +135,7 @@ fn process(input: &str) -> usize {
                         continue;
                     }
 
-                    // check below
+                    // // check below
                     let holes_below = &holes_per_row[point.1 as usize + 1];
                     if holes_below.iter().all(|h| seen.contains(&h)) {
                         println!("Continue because of holes-below check!");
@@ -200,30 +191,3 @@ mod tests {
         assert_eq!(result, 154)
     }
 }
-
-// 6658 => too high (also someone else's answer?)
-// 6258 => too low (also someone else's answer?)
-// 6478 => too low (_not_ someone else's answer!)
-// 6534 => (someone else's answer!)
-
-// Found best solution until now: 5362 steps!
-// Found best solution until now: 5438 steps!
-// Found best solution until now: 5562 steps!
-// Found best solution until now: 5566 steps!
-// Found best solution until now: 5706 steps!
-// Found best solution until now: 5722 steps!
-// Found best solution until now: 5866 steps!
-// Found best solution until now: 5918 steps!
-// Found best solution until now: 6026 steps!
-// Found best solution until now: 6050 steps!
-// Found best solution until now: 6158 steps!
-// Found best solution until now: 6258 steps!
-// Found best solution until now: 6358 steps!
-// Found best solution until now: 6402 steps!
-// Found best solution until now: 6478 steps!
-// Found best solution until now: 6534 steps!
-
-// Benchmark, time to 6158
-// no hole checks: 27.513s
-// check right: 27.558s
-// right & below check: 28.223s
