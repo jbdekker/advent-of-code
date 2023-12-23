@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -9,57 +9,69 @@ fn main() {
 fn process(input: &str) -> usize {
     let maze: Vec<Vec<char>> = input.lines().map(|j| j.trim().chars().collect()).collect();
 
-    let seen: HashMap<(isize, isize), bool> = HashMap::new();
-    let mut queue: VecDeque<(HashMap<(isize, isize), bool>, (isize, isize), usize)> =
-        VecDeque::new();
+    // let mut row_counts: Vec<usize> = maze
+    //     .iter()
+    //     // .enumerate()
+    //     .map(|r| {
+    //         r.iter()
+    //             .filter(|c| vec!['.', '>', '<', 'v'].contains(c))
+    //             .count()
+    //     })
+    //     .collect();
+
+    // row_counts.sort();
+
+    // println!("{:?}", &row_counts);
+
+    let seen: HashSet<(isize, isize)> = HashSet::new();
+    let mut queue: VecDeque<(HashSet<(isize, isize)>, (isize, isize), usize)> = VecDeque::new();
     queue.push_back((seen, (1, 0), 0));
 
-    let mut res: Vec<(HashMap<(isize, isize), bool>, usize)> = Vec::new();
+    let mut res: Vec<(HashSet<(isize, isize)>, usize)> = Vec::new();
+    let dirs = vec![(1, 0), (-1, 0), (0, 1), (0, -1)];
 
-    // let end = (maze[0].len() as isize - 2, maze.len() as isize - 1);
+    let mut jumps: HashMap<(isize, isize), ((isize, isize), usize)> = HashMap::new();
 
     while !queue.is_empty() {
+        // let ql = queue.len();
+        // if ql % 5 == 0 {
+        //     println!("Queue length: {}", ql);
+        // }
+
         let (mut seen, point, n_steps) = queue.pop_front().unwrap();
-        // dbg!(point);
 
         if point.1 == maze.len() as isize - 1 {
-            println!("> Reached the end of the maze in {} steps!", n_steps);
-            // dbg!(&seen);
             res.push((seen, n_steps));
             continue;
         }
 
-        if point.0 < 0 || point.1 < 0 || seen.get(&point).is_some() {
-            // dbg!(point);
-            continue;
-        }
+        // if point.0 < 0 || point.1 < 0 || seen.contains(&point) {
+        //     // dbg!(point);
+        //     continue;
+        // }
 
-        seen.insert(point, true);
+        seen.insert(point);
 
         match maze[point.1 as usize][point.0 as usize] {
-            '>' => queue.push_front((seen, (point.0 + 1, point.1), n_steps + 1)),
-            '<' => queue.push_front((seen, (point.0 - 1, point.1), n_steps + 1)),
-            'v' => queue.push_front((seen, (point.0, point.1 + 1), n_steps + 1)),
-            '.' => {
-                for p in vec![(1, 0), (-1, 0), (0, 1), (0, -1)].iter() {
+            '.' | '>' | '<' | 'v' => {
+                for p in dirs.iter() {
                     let new_point = (point.0 + p.0, point.1 + p.1);
-                    if seen.get(&new_point).is_none() {
+                    if new_point.1 >= 0
+                        && new_point.0 >= 0
+                        && maze[new_point.1 as usize][new_point.0 as usize] != '#'
+                        && !seen.contains(&new_point)
+                    {
                         queue.push_front((seen.clone(), new_point, n_steps + 1));
                     }
                 }
             }
             '#' => {
-                // println!("nothing to do, go char '#' continue;");
                 continue;
             }
             _ => panic!("Should be unreachable!"),
         }
-        // println!("next loop!")
     }
 
-    // dbg!(&res);
-
-    // 0
     let (_, n_steps) = res.iter().max_by_key(|(_, n)| n).unwrap();
 
     *n_steps
