@@ -1,33 +1,11 @@
-use regex::Regex;
-
-
 fn main() {
     let input = include_str!("input.txt");
     let output = process(input);
     dbg!(output);
 }
 
-fn parse(word: &str) -> i32 {
-    word.parse::<i32>().unwrap()
-}
-
-fn first_match(re: Regex, line: &str) -> String {
-    re.captures(line).unwrap()[0].to_string()
-}
-
-fn extract_number(line: &str) -> i32 {
-    let re: Regex = Regex::new(r"\d").unwrap();
-    let line_reversed: String = line.chars().rev().collect();
-
-    let first: String = first_match(re.clone(), &line);
-    let last: String = first_match(re.clone(), &line_reversed).chars().rev().collect();
-
-    10 * parse(&first) + parse(&last)
-}
-
-
-fn process(input: &str) -> i32 {
-    input.lines().map(|line| extract_number(line)).sum()
+fn process(input: &str) -> usize {
+    input.lines().map(|line| ((line.chars().find(|x| x.is_ascii_digit()).unwrap() as u8 - b'0') * 10 + (line.chars().rev().find(|c| c.is_ascii_digit()).unwrap() as u8 - b'0')) as usize).sum()
 }
 
 
