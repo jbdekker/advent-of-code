@@ -4,56 +4,31 @@ fn main() {
     dbg!(output);
 }
 
-fn process(input: &str) -> i32 {
-    let sum_of_powers: i32 = input
+fn process(input: &str) -> usize {
+    let sum_of_powers: usize = input
         .lines()
         .map(|line| {
-            let parts: Vec<&str> = line.split(":").collect();
+            let mut rgb = vec![0, 0, 0];
 
-            let grabs: Vec<Vec<&str>> = parts[1]
+            let _: Vec<_> = line
+                .splitn(2, ":")
+                .nth(1)
+                .unwrap()
                 .split(&[',', ';'][..])
-                .map(|x| x.trim().split_whitespace().collect())
+                .map(|cubes| {
+                    let parts: Vec<&str> = cubes.trim().split_whitespace().collect();
+                    let i = match parts[1] {
+                        "red" => 0,
+                        "green" => 1,
+                        "blue" => 2,
+                        _ => unreachable!(),
+                    };
+
+                    rgb[i] = rgb[i].max(parts[0].parse::<usize>().unwrap());
+                })
                 .collect();
 
-            let reds: i32 = grabs
-                .iter()
-                .filter_map(|x| {
-                    if x[1] == "red" {
-                        Some(x[0].parse::<i32>().unwrap())
-                    } else {
-                        None
-                    }
-                })
-                .max()
-                .unwrap();
-
-            let greens: i32 = grabs
-                .iter()
-                .filter_map(|x| {
-                    if x[1] == "green" {
-                        Some(x[0].parse::<i32>().unwrap())
-                    } else {
-                        None
-                    }
-                })
-                .max()
-                .unwrap();
-
-            let blues: i32 = grabs
-                .iter()
-                .filter_map(|x| {
-                    if x[1] == "blue" {
-                        Some(x[0].parse::<i32>().unwrap())
-                    } else {
-                        None
-                    }
-                })
-                .max()
-                .unwrap();
-
-            let power: i32 = reds * greens * blues;
-
-            power
+            rgb.iter().product::<usize>()
         })
         .sum();
 

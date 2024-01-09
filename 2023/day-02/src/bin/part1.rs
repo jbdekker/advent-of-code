@@ -21,7 +21,7 @@ fn process(input: &str) -> usize {
                         "red" => 0,
                         "green" => 1,
                         "blue" => 2,
-                        _ => panic!(),
+                        _ => unreachable!(),
                     };
 
                     rgb[i] = rgb[i].max(parts[0].parse::<usize>().unwrap());
