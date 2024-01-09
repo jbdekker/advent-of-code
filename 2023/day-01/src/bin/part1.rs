@@ -5,9 +5,15 @@ fn main() {
 }
 
 fn process(input: &str) -> usize {
-    input.lines().map(|line| ((line.chars().find(|x| x.is_ascii_digit()).unwrap() as u8 - b'0') * 10 + (line.chars().rev().find(|c| c.is_ascii_digit()).unwrap() as u8 - b'0')) as usize).sum()
+    input
+        .lines()
+        .map(|line| {
+            ((line.chars().find(|x| x.is_ascii_digit()).unwrap() as u8 - b'0') * 10
+                + (line.chars().rev().find(|c| c.is_ascii_digit()).unwrap() as u8 - b'0'))
+                as usize
+        })
+        .sum()
 }
-
 
 #[cfg(test)]
 mod tests {
